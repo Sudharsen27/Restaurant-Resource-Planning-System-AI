@@ -301,4 +301,5 @@ MIT (or your chosen license)
 
 **Restaurant Resource Planning System** — Built with FastAPI, React, and scikit-learn.
 #   R e s t a u r a n t - R e s o u r c e - P l a n n i n g - S y s t e m - A I  
+ #   R e s t a u r a n t - R e s o u r c e - P l a n n i n g - S y s t e m - A I  
  
