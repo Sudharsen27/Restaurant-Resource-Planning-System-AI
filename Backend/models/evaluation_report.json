@@ -1,0 +1,53 @@
+{
+  "model_name": "GradientBoostingRegressor",
+  "metrics": {
+    "mae": 0.8047,
+    "rmse": 1.4282,
+    "r2": 0.9992,
+    "accuracy": 99.92
+  },
+  "model_comparison": {
+    "RandomForestRegressor": {
+      "mae": 1.1272,
+      "rmse": 1.6865,
+      "r2": 0.9989,
+      "accuracy": 99.89
+    },
+    "GradientBoostingRegressor": {
+      "mae": 0.8047,
+      "rmse": 1.4282,
+      "r2": 0.9992,
+      "accuracy": 99.92
+    },
+    "ExtraTreesRegressor": {
+      "mae": 0.7685,
+      "rmse": 1.448,
+      "r2": 0.9992,
+      "accuracy": 99.92
+    }
+  },
+  "feature_importance": {
+    "feature_0": 0.0,
+    "feature_1": 0.0,
+    "feature_2": 0.0,
+    "feature_3": 0.0,
+    "feature_4": 0.0,
+    "feature_5": 0.0001,
+    "feature_6": 0.1171,
+    "feature_7": 0.0125,
+    "feature_8": 0.0208,
+    "feature_9": 0.0148,
+    "feature_10": 0.556,
+    "feature_11": 0.2785,
+    "feature_12": 0.0,
+    "feature_13": 0.0,
+    "feature_14": 0.0,
+    "feature_15": 0.0,
+    "feature_16": 0.0,
+    "feature_17": 0.0
+  },
+  "feature_importance_chart": "C:\\Learning\\Restaurant-resource-planning-system\\Backend\\models\\feature_importance.png",
+  "dataset_size": 10020,
+  "training_samples": 8016,
+  "test_samples": 2004
+}

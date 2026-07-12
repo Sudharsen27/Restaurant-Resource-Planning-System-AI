@@ -1,0 +1,90 @@
+[
+  {
+    "version_label": "v8",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-12T06:19:00.386883+00:00",
+    "dataset_size": 10020,
+    "accuracy": 99.92,
+    "mae": 0.8047,
+    "rmse": 1.4282,
+    "r2": 0.9992,
+    "is_production": true
+  },
+  {
+    "version_label": "v7",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-12T11:41:51.007080+05:30",
+    "dataset_size": 10019,
+    "accuracy": 99.94,
+    "mae": 0.7831,
+    "rmse": 1.2418,
+    "r2": 0.9994,
+    "is_production": false
+  },
+  {
+    "version_label": "v6",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-12T11:40:05.453739+05:30",
+    "dataset_size": 10018,
+    "accuracy": 99.89,
+    "mae": 0.7805,
+    "rmse": 1.6877,
+    "r2": 0.9989,
+    "is_production": false
+  },
+  {
+    "version_label": "v5",
+    "model_name": "ExtraTreesRegressor",
+    "training_date": "2026-07-12T11:38:24.776661+05:30",
+    "dataset_size": 10017,
+    "accuracy": 99.94,
+    "mae": 0.7398,
+    "rmse": 1.2446,
+    "r2": 0.9994,
+    "is_production": false
+  },
+  {
+    "version_label": "v4",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-12T11:36:47.955346+05:30",
+    "dataset_size": 10016,
+    "accuracy": 99.88,
+    "mae": 0.8116,
+    "rmse": 1.7354,
+    "r2": 0.9988,
+    "is_production": false
+  },
+  {
+    "version_label": "v3",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-09T12:20:20.694398+05:30",
+    "dataset_size": 10015,
+    "accuracy": 99.87,
+    "mae": 0.799,
+    "rmse": 1.7839,
+    "r2": 0.9987,
+    "is_production": false
+  },
+  {
+    "version_label": "v2",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-09T12:14:16.178585+05:30",
+    "dataset_size": 10014,
+    "accuracy": 99.85,
+    "mae": 0.8014,
+    "rmse": 1.9143,
+    "r2": 0.9985,
+    "is_production": false
+  },
+  {
+    "version_label": "v1",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-07-08T20:04:22.422503+05:30",
+    "dataset_size": 10013,
+    "accuracy": 99.94,
+    "mae": 0.766,
+    "rmse": 1.2133,
+    "r2": 0.9994,
+    "is_production": false
+  }
+]
