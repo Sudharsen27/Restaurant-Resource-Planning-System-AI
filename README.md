@@ -2,11 +2,33 @@
 
 Machine learning-driven restaurant operations platform that forecasts customer demand, plans staff and inventory, learns from manager feedback, and continuously improves model accuracy.
 
+---
+
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Folder Structure](#folder-structure)
+- [System Architecture](#system-architecture)
+- [Database Schema](#database-schema)
+- [Machine Learning Pipeline](#machine-learning-pipeline)
+- [API Documentation](#api-documentation)
+- [Installation Guide](#installation-guide)
+- [Screenshots](#screenshots)
+- [Future Improvements](#future-improvements)
+- [License](#license)
+- [Contributing](#contributing)
+
+---
+
 ## Project Overview
 
 RRPS is a full-stack **Self-Learning Forecaster** for restaurants. It combines machine learning predictions with operational planning (workforce, procurement, profitability) and a closed feedback loop where managers submit actual customer counts to retrain the model automatically.
 
 The system is designed as an enterprise-style analytics dashboard with eight functional modules, PostgreSQL persistence, and versioned ML models.
+
+---
 
 ## Features
 
@@ -30,6 +52,8 @@ The system is designed as an enterprise-style analytics dashboard with eight fun
 - Responsive React dashboard with dark mode
 - CSV export on planner and history pages
 
+---
+
 ## Technology Stack
 
 | Layer | Technologies |
@@ -39,6 +63,8 @@ The system is designed as an enterprise-style analytics dashboard with eight fun
 | **Database** | PostgreSQL |
 | **ML** | scikit-learn, pandas, joblib, matplotlib |
 | **Tooling** | ESLint, pytest |
+
+---
 
 ## Folder Structure
 
@@ -70,6 +96,8 @@ Restaurant-resource-planning-system/
 │   └── .env.example
 └── README.md
 ```
+
+---
 
 ## System Architecture
 
@@ -124,6 +152,8 @@ flowchart TB
 4. Feedback appends row to dataset and triggers **retraining**
 5. New model version promoted to production; accuracy metrics updated
 
+---
+
 ## Database Schema
 
 | Table | Purpose |
@@ -137,7 +167,9 @@ flowchart TB
 | `accuracy_history` | Accuracy tracking over time |
 | `users` | User accounts (optional auth) |
 
-Key relationships: `prediction_history` → staff/inventory/dashboard records via `prediction_id`.
+**Key relationships:** `prediction_history` → staff/inventory/dashboard records via `prediction_id`.
+
+---
 
 ## Machine Learning Pipeline
 
@@ -149,11 +181,13 @@ Key relationships: `prediction_history` → staff/inventory/dashboard records vi
 6. **Feedback loop** — actual customers appended; model retrained on feedback
 7. **Versioning** — each retrain creates `vN` artifact; previous versions archived
 
-Metrics tracked: **Accuracy**, **MAE**, **RMSE**, **R²**, **MAPE**.
+**Metrics tracked:** Accuracy, MAE, RMSE, R², MAPE.
+
+---
 
 ## API Documentation
 
-Interactive docs: **http://127.0.0.1:8001/docs**
+**Interactive docs:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
 ### Forecast
 
@@ -190,6 +224,8 @@ Interactive docs: **http://127.0.0.1:8001/docs**
 | GET | `/model/accuracy` | Accuracy dashboard |
 | POST | `/model/retrain` | Manual retrain |
 
+---
+
 ## Installation Guide
 
 ### Prerequisites
@@ -210,11 +246,21 @@ cd Restaurant-resource-planning-system
 ```bash
 cd Backend
 python -m venv venv
-# Windows
-.\venv\Scripts\Activate.ps1
-# macOS/Linux
-source venv/bin/activate
+```
 
+**Windows:**
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux:**
+
+```bash
+source venv/bin/activate
+```
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -238,7 +284,7 @@ Start API:
 python run.py
 ```
 
-Swagger UI: http://127.0.0.1:8001/docs
+**Swagger UI:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
 ### 3. Frontend setup
 
@@ -249,7 +295,7 @@ cp .env.example .env
 npm run dev
 ```
 
-App: http://localhost:5173
+**App:** [http://localhost:5173](http://localhost:5173)
 
 ### 4. Production build
 
@@ -259,19 +305,23 @@ npm run build
 npm run preview
 ```
 
-## Screenshots Section
+---
+
+## Screenshots
 
 > Add screenshots after deployment. Suggested captures:
 >
-> 1. Dashboard — KPI cards and charts  
-> 2. Forecast — prediction form and results  
-> 3. Staff Planner — role table and charts  
-> 4. Inventory Planner — ingredient table  
-> 5. Manager Feedback — submission result panel  
-> 6. Model Analytics — training history charts  
-> 7. Prediction History — tabbed history view  
+> 1. Dashboard — KPI cards and charts
+> 2. Forecast — prediction form and results
+> 3. Staff Planner — role table and charts
+> 4. Inventory Planner — ingredient table
+> 5. Manager Feedback — submission result panel
+> 6. Model Analytics — training history charts
+> 7. Prediction History — tabbed history view
 
 Store images in `docs/screenshots/` and link here.
+
+---
 
 ## Future Improvements
 
@@ -285,21 +335,22 @@ Store images in `docs/screenshots/` and link here.
 - [ ] Batch forecast scheduling (cron-based)
 - [ ] Integration with POS systems for automatic actuals
 
+---
+
 ## License
 
 MIT (or your chosen license)
 
+---
+
 ## Contributing
 
-1. Fork the repository  
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)  
-3. Commit changes (`git commit -m 'Add amazing feature'`)  
-4. Push to branch (`git push origin feature/amazing-feature`)  
-5. Open a Pull Request  
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
 **Restaurant Resource Planning System** — Built with FastAPI, React, and scikit-learn.
-#   R e s t a u r a n t - R e s o u r c e - P l a n n i n g - S y s t e m - A I  
- #   R e s t a u r a n t - R e s o u r c e - P l a n n i n g - S y s t e m - A I  
- 
