@@ -8,7 +8,7 @@ from app.schemas.learning_feedback import (
     PredictionHistoryItem,
 )
 from app.services import feedback_service, learning_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/feedback", tags=["feedback-learning"])
 

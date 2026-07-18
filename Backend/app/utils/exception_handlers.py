@@ -1,22 +1,19 @@
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from pydantic import ValidationError as PydanticValidationError
+"""Backward-compatible re-export — prefer `app.core.exception_handlers`."""
 
-from app.utils.exceptions import AppException
+from app.core.exception_handlers import (
+    app_exception_handler,
+    http_exception_handler,
+    register_exception_handlers,
+    sqlalchemy_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 
-
-async def app_exception_handler(_request: Request, exc: AppException) -> JSONResponse:
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.message},
-    )
-
-
-async def validation_exception_handler(
-    _request: Request,
-    exc: PydanticValidationError,
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()},
-    )
+__all__ = [
+    "app_exception_handler",
+    "validation_exception_handler",
+    "http_exception_handler",
+    "sqlalchemy_exception_handler",
+    "unhandled_exception_handler",
+    "register_exception_handlers",
+]

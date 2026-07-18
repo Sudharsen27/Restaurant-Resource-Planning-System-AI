@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas.staff import StaffCreate, StaffResponse
 from app.services import staff_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/staff", tags=["staff"])
 

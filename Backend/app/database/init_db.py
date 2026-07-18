@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlalchemy import select
 
-from app.database.connection import Base, SessionLocal, engine
+from app.db import Base, SessionLocal, engine
 from app.models import (
     CustomerForecast,
     Feedback,

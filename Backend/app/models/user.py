@@ -1,7 +1,7 @@
 from sqlalchemy import Enum, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.connection import Base
+from app.db.base import Base
 from app.models.enums import UserRole
 
 

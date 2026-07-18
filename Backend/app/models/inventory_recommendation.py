@@ -1,7 +1,7 @@
 from sqlalchemy import Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.db.base import Base
 
 
 class InventoryRecommendation(Base):

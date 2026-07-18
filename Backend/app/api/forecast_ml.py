@@ -8,7 +8,7 @@ from app.schemas.ml_forecast import (
     RetrainResponse,
 )
 from app.services import ml_forecast_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/forecast", tags=["forecast-ml"])
 

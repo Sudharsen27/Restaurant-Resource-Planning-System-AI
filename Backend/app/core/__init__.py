@@ -1,5 +1,6 @@
-"""Backward-compatible re-export — prefer `app.core.exceptions`."""
+"""Core package — configuration, logging, exceptions, security."""
 
+from app.core.config import get_settings, settings
 from app.core.exceptions import (
     AppException,
     ConflictError,
@@ -11,6 +12,8 @@ from app.core.exceptions import (
 )
 
 __all__ = [
+    "settings",
+    "get_settings",
     "AppException",
     "NotFoundError",
     "ConflictError",

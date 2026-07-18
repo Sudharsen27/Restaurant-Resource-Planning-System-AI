@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas.inventory import InventoryCreate, InventoryResponse
 from app.services import inventory_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 

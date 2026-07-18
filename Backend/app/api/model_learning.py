@@ -8,7 +8,7 @@ from app.schemas.learning_feedback import (
     ModelVersionResponse,
 )
 from app.services import learning_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/model", tags=["model-learning"])
 

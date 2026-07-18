@@ -3,7 +3,7 @@ from datetime import date, datetime
 from sqlalchemy import Date, DateTime, Float, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database.connection import Base
+from app.db.base import Base
 
 
 class AccuracyHistory(Base):

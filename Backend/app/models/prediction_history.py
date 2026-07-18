@@ -1,13 +1,16 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, Float, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.connection import Base
+from app.db.base import Base
 
 
 class PredictionHistory(Base):
     __tablename__ = "prediction_history"
+    __table_args__ = (
+        Index("ix_prediction_history_date_hour", "forecast_date", "forecast_hour"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     predicted_customers: Mapped[int] = mapped_column(Integer, nullable=False)

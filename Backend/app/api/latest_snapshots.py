@@ -8,7 +8,7 @@ from app.schemas.persistence import (
     LatestStaffResponse,
 )
 from app.services.planning_persistence_service import PlanningPersistenceService
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 from app.utils.exceptions import AppException
 
 router = APIRouter(tags=["persistence"])

@@ -1,13 +1,5 @@
-from collections.abc import Generator
+"""Backward-compatible re-export — prefer `app.api.dependencies` or `app.db.session`."""
 
-from sqlalchemy.orm import Session
+from app.db.session import get_db
 
-from app.database.connection import SessionLocal
-
-
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+__all__ = ["get_db"]

@@ -1,53 +1,40 @@
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.customer_forecast import CustomerForecast
+from app.repositories.forecast_repository import ForecastRepository
 from app.schemas.forecast import ForecastCreate, ForecastUpdate
 from app.utils.exceptions import NotFoundError
 
 
-def get_forecasts(db: Session, skip: int = 0, limit: int = 100) -> list[CustomerForecast]:
-    stmt = (
-        select(CustomerForecast)
-        .order_by(CustomerForecast.forecast_date.desc(), CustomerForecast.forecast_hour.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-    return list(db.scalars(stmt).all())
+def get_forecasts(db: Session, skip: int = 0, limit: int = 100):
+    return ForecastRepository(db).list_ordered(skip=skip, limit=limit)
 
 
-def get_forecast_by_id(db: Session, forecast_id: int) -> CustomerForecast:
-    forecast = db.get(CustomerForecast, forecast_id)
+def get_forecast_by_id(db: Session, forecast_id: int):
+    forecast = ForecastRepository(db).get_by_id(forecast_id)
     if forecast is None:
         raise NotFoundError("Forecast", forecast_id)
     return forecast
 
 
-def create_forecast(db: Session, payload: ForecastCreate) -> CustomerForecast:
-    forecast = CustomerForecast(**payload.model_dump())
-    db.add(forecast)
-    db.commit()
-    db.refresh(forecast)
-    return forecast
+def create_forecast(db: Session, payload: ForecastCreate):
+    return ForecastRepository(db).create(**payload.model_dump())
 
 
-def update_forecast(
-    db: Session,
-    forecast_id: int,
-    payload: ForecastUpdate,
-) -> CustomerForecast:
-    forecast = get_forecast_by_id(db, forecast_id)
-    update_data = payload.model_dump(exclude_unset=True)
+def update_forecast(db: Session, forecast_id: int, payload: ForecastUpdate):
+    repo = ForecastRepository(db)
+    forecast = repo.get_by_id(forecast_id)
+    if forecast is None:
+        raise NotFoundError("Forecast", forecast_id)
 
-    for field, value in update_data.items():
+    for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(forecast, field, value)
 
-    db.commit()
-    db.refresh(forecast)
-    return forecast
+    return repo.save(forecast)
 
 
 def delete_forecast(db: Session, forecast_id: int) -> None:
-    forecast = get_forecast_by_id(db, forecast_id)
-    db.delete(forecast)
-    db.commit()
+    repo = ForecastRepository(db)
+    forecast = repo.get_by_id(forecast_id)
+    if forecast is None:
+        raise NotFoundError("Forecast", forecast_id)
+    repo.delete(forecast)

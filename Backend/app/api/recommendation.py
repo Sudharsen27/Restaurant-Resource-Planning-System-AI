@@ -9,7 +9,7 @@ from app.schemas.recommendation import (
     StaffRecommendationResponse,
 )
 from app.services import recommendation_service
-from app.utils.dependencies import get_db
+from app.api.dependencies import get_db
 from sqlalchemy.orm import Session
 
 router = APIRouter(

@@ -1,16 +1,7 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+"""Backward-compatible re-export — prefer `app.db`."""
 
-from app.utils.config import settings
+from app.db.base import Base
+from app.db.database import engine
+from app.db.session import SessionLocal
 
-engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_recycle=3600,
-)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
+__all__ = ["Base", "engine", "SessionLocal"]
