@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_recycle: int = 3600
+    db_statement_timeout_seconds: int = 0
+    # Prefer Alembic for schema; create_all only when explicitly allowed (tests)
+    use_alembic: bool = True
+    allow_create_all: bool = False
 
     # Paths (override in .env for deployments)
     models_dir: Path = Field(default_factory=lambda: DEFAULT_MODELS_DIR)

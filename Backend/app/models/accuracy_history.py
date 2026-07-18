@@ -1,15 +1,14 @@
-from datetime import date, datetime
+from datetime import date
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, Float, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import BaseModel
 
 
-class AccuracyHistory(Base):
+class AccuracyHistory(BaseModel):
     __tablename__ = "accuracy_history"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     recorded_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     accuracy: Mapped[float] = mapped_column(Float, nullable=False)
     mae: Mapped[float] = mapped_column(Float, nullable=False)
@@ -19,9 +18,11 @@ class AccuracyHistory(Base):
     model_version_id: Mapped[int | None] = mapped_column(
         ForeignKey("model_versions.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
+
+    model_version: Mapped["ModelVersion | None"] = relationship(
+        "ModelVersion",
+        back_populates="accuracy_records",
+        lazy="joined",
     )

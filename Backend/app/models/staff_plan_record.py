@@ -1,16 +1,18 @@
-from datetime import datetime
-
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, func
+from sqlalchemy import CheckConstraint, Float, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import BaseModel
 
 
-class StaffPlanRecord(Base):
+class StaffPlanRecord(BaseModel):
     __tablename__ = "staff_plan_records"
+    __table_args__ = (
+        CheckConstraint("predicted_customers >= 0", name="ck_staff_plan_customers"),
+        CheckConstraint("staff_cost >= 0", name="ck_staff_plan_cost"),
+        CheckConstraint("total_staff >= 0", name="ck_staff_plan_total"),
+    )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     prediction_id: Mapped[int | None] = mapped_column(
         ForeignKey("prediction_history.id", ondelete="SET NULL"),
         nullable=True,
@@ -20,14 +22,9 @@ class StaffPlanRecord(Base):
     roles_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
     staff_cost: Mapped[float] = mapped_column(Float, nullable=False)
     total_staff: Mapped[int] = mapped_column(Integer, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-        index=True,
-    )
 
     prediction: Mapped["PredictionHistory | None"] = relationship(
         "PredictionHistory",
         back_populates="staff_plans",
+        lazy="joined",
     )

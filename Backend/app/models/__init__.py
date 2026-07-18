@@ -1,6 +1,29 @@
 from app.models.accuracy_history import AccuracyHistory
 from app.models.customer_forecast import CustomerForecast
 from app.models.dashboard_summary_record import DashboardSummaryRecord
+from app.models.enterprise import (
+    AuditLog,
+    Branch,
+    Category,
+    Customer,
+    Employee,
+    Expense,
+    InventoryItem,
+    InventoryTransaction,
+    MenuItem,
+    Notification,
+    Order,
+    OrderItem,
+    Payment,
+    Permission,
+    Product,
+    PurchaseItem,
+    PurchaseOrder,
+    Restaurant,
+    Role,
+    Sale,
+    Supplier,
+)
 from app.models.feedback import Feedback
 from app.models.inventory_plan_record import InventoryPlanRecord
 from app.models.inventory_recommendation import InventoryRecommendation
@@ -24,4 +47,25 @@ __all__ = [
     "StaffPlanRecord",
     "InventoryPlanRecord",
     "DashboardSummaryRecord",
+    "Restaurant",
+    "Branch",
+    "Role",
+    "Permission",
+    "Employee",
+    "Customer",
+    "Supplier",
+    "Category",
+    "Product",
+    "MenuItem",
+    "InventoryItem",
+    "InventoryTransaction",
+    "Order",
+    "OrderItem",
+    "Payment",
+    "Sale",
+    "Expense",
+    "PurchaseOrder",
+    "PurchaseItem",
+    "Notification",
+    "AuditLog",
 ]

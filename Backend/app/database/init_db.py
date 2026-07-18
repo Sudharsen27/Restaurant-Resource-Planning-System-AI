@@ -1,22 +1,67 @@
-from datetime import date
+"""Database bootstrap — Alembic migrations + seeds (no create_all in production)."""
+
+from __future__ import annotations
+
+from pathlib import Path
 
 from sqlalchemy import select
 
-from app.db import Base, SessionLocal, engine
-from app.models import (
-    CustomerForecast,
-    Feedback,
-    InventoryRecommendation,
-    StaffRecommendation,
-    User,
-)
-from app.models.enums import UserRole
+from app.core.config import settings
+from app.core.logging import get_logger
+from app.db.database import check_connection, engine
+from app.db.session import SessionLocal
+
+logger = get_logger(__name__)
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def run_alembic_upgrade(revision: str = "head") -> None:
+    """Apply migrations up to revision (default: head)."""
+    from alembic import command
+    from alembic.config import Config
+
+    cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    command.upgrade(cfg, revision)
+    logger.info("Alembic upgrade to %s complete", revision)
+
+
+def run_alembic_downgrade(revision: str = "-1") -> None:
+    """Rollback migrations (default: one revision)."""
+    from alembic import command
+    from alembic.config import Config
+
+    cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    command.downgrade(cfg, revision)
+    logger.info("Alembic downgrade to %s complete", revision)
 
 
 def init_database() -> None:
-    import app.models  # noqa: F401 — register models with Base.metadata
+    """Ensure schema exists via Alembic (or create_all only when explicitly allowed)."""
+    import app.models  # noqa: F401 — register metadata
 
-    Base.metadata.create_all(bind=engine)
+    if not check_connection():
+        raise RuntimeError("Cannot connect to PostgreSQL. Check DATABASE_URL.")
+
+    if settings.use_alembic:
+        run_alembic_upgrade("head")
+        return
+
+    if settings.allow_create_all and not settings.is_production:
+        from app.db.base import Base
+
+        logger.warning(
+            "Using Base.metadata.create_all — disabled in production; prefer Alembic",
+            extra={"event": "schema_create_all"},
+        )
+        Base.metadata.create_all(bind=engine)
+        return
+
+    raise RuntimeError(
+        "Schema bootstrap blocked. Set USE_ALEMBIC=true (recommended) "
+        "or ALLOW_CREATE_ALL=true for local/tests only."
+    )
 
 
 def bootstrap_production_model_version() -> None:
@@ -64,111 +109,7 @@ def bootstrap_production_model_version() -> None:
 
 
 def seed_placeholder_data() -> None:
-    db = SessionLocal()
-    try:
-        has_users = db.scalar(select(User.id).limit(1)) is not None
-        if has_users:
-            return
+    """Backward-compatible entrypoint used by app lifespan."""
+    from app.db.seed import run_all_seeds
 
-        admin = User(
-            full_name="Admin User",
-            email="admin@restaurant.com",
-            password_hash="placeholder_hash_admin",
-            role=UserRole.ADMIN,
-        )
-        manager = User(
-            full_name="Manager User",
-            email="manager@restaurant.com",
-            password_hash="placeholder_hash_manager",
-            role=UserRole.MANAGER,
-        )
-        db.add_all([admin, manager])
-        db.flush()
-
-        forecasts = [
-            CustomerForecast(
-                forecast_date=date(2026, 7, 7),
-                forecast_hour=12,
-                predicted_customers=85,
-                actual_customers=80,
-                confidence_score=0.87,
-            ),
-            CustomerForecast(
-                forecast_date=date(2026, 7, 7),
-                forecast_hour=18,
-                predicted_customers=120,
-                actual_customers=None,
-                confidence_score=0.91,
-            ),
-            CustomerForecast(
-                forecast_date=date(2026, 7, 8),
-                forecast_hour=19,
-                predicted_customers=150,
-                actual_customers=142,
-                confidence_score=0.84,
-            ),
-        ]
-        db.add_all(forecasts)
-        db.flush()
-
-        staff_rows = [
-            StaffRecommendation(
-                forecast_id=forecasts[0].id,
-                chefs=3,
-                waiters=5,
-                cashiers=2,
-                cleaners=2,
-            ),
-            StaffRecommendation(
-                forecast_id=forecasts[1].id,
-                chefs=4,
-                waiters=7,
-                cashiers=2,
-                cleaners=3,
-            ),
-        ]
-        inventory_rows = [
-            InventoryRecommendation(
-                forecast_id=forecasts[0].id,
-                ingredient_name="Chicken Breast",
-                quantity=12.5,
-                unit="kg",
-                estimated_cost=187.50,
-            ),
-            InventoryRecommendation(
-                forecast_id=forecasts[0].id,
-                ingredient_name="Tomatoes",
-                quantity=8.0,
-                unit="kg",
-                estimated_cost=24.00,
-            ),
-            InventoryRecommendation(
-                forecast_id=forecasts[1].id,
-                ingredient_name="Rice",
-                quantity=15.0,
-                unit="kg",
-                estimated_cost=45.00,
-            ),
-        ]
-        feedback_rows = [
-            Feedback(
-                forecast_id=forecasts[0].id,
-                predicted_value=85,
-                actual_value=80,
-                comments="Slightly over-predicted lunch rush.",
-            ),
-            Feedback(
-                forecast_id=forecasts[2].id,
-                predicted_value=150,
-                actual_value=142,
-                comments="Close estimate for Friday dinner.",
-            ),
-        ]
-
-        db.add_all(staff_rows + inventory_rows + feedback_rows)
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+    run_all_seeds()

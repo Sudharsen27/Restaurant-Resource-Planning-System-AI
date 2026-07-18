@@ -1,15 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Float, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import BaseModel
 
 
-class ModelVersion(Base):
+class ModelVersion(BaseModel):
     __tablename__ = "model_versions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     version_label: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
     model_path: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -20,9 +19,21 @@ class ModelVersion(Base):
     mae: Mapped[float] = mapped_column(Float, nullable=False)
     rmse: Mapped[float] = mapped_column(Float, nullable=False)
     r2: Mapped[float] = mapped_column(Float, nullable=False)
-    is_production: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
+    is_production: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
         nullable=False,
+        server_default="false",
+        index=True,
+    )
+
+    accuracy_records: Mapped[list["AccuracyHistory"]] = relationship(
+        "AccuracyHistory",
+        back_populates="model_version",
+        lazy="selectin",
+    )
+    retraining_records: Mapped[list["RetrainingHistory"]] = relationship(
+        "RetrainingHistory",
+        back_populates="model_version",
+        lazy="selectin",
     )
