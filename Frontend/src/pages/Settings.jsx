@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import Card from '../components/ui/Card'
 import { CardSkeleton } from '../components/ui/Skeleton'
 import EmptyState from '../components/ui/EmptyState'
+import { API_BASE_URL, APP_NAME } from '../constants/config'
 import { useTheme } from '../context/ThemeContext'
 import { healthCheck } from '../services/forecastService'
 import { getDatasetInfo } from '../services/datasetService'
@@ -10,7 +11,7 @@ import { formatDate, formatNumber } from '../utils/format'
 
 export default function Settings() {
   const { darkMode, toggleTheme } = useTheme()
-  const restaurantName = 'Spice Garden Restaurant'
+  const restaurantName = APP_NAME
 
   const { data: health, isLoading: healthLoading } = useQuery({
     queryKey: ['api-health'],
@@ -92,7 +93,7 @@ export default function Settings() {
               <div className="flex justify-between">
                 <dt className="text-slate-500">Base URL</dt>
                 <dd className="font-mono text-xs">
-                  {import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001'}
+                  {API_BASE_URL}
                 </dd>
               </div>
               <div className="flex items-center gap-2 text-emerald-600">

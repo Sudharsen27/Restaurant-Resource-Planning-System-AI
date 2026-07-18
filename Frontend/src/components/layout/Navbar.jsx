@@ -1,4 +1,5 @@
 import { Bell, Menu, Moon, Sun, User } from 'lucide-react'
+import { APP_NAME } from '../../constants/config'
 import { useTheme } from '../../context/ThemeContext'
 
 export default function Navbar({ onMenuClick }) {
@@ -22,7 +23,7 @@ export default function Navbar({ onMenuClick }) {
         </button>
         <div>
           <h1 className="text-sm font-semibold text-slate-900 dark:text-white">
-            Spice Garden Restaurant
+            {APP_NAME}
           </h1>
           <p className="text-xs text-slate-500">{today}</p>
         </div>
