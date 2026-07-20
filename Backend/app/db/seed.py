@@ -151,13 +151,20 @@ def seed_rbac(db) -> None:
 
 
 def seed_enterprise(db, users: dict[str, User]) -> None:
-    existing = db.scalar(select(Restaurant).limit(1))
+    existing = db.scalar(select(Restaurant).where(Restaurant.is_deleted.is_(False)).limit(1))
     if existing:
+        # Ensure migrated columns are populated for older seed rows
+        if not getattr(existing, "code", None):
+            existing.code = "SG-01"
+            existing.city = existing.city or "Bengaluru"
+            db.flush()
         logger.info("Enterprise seed skipped — restaurant already exists")
         return
 
     restaurant = Restaurant(
-        name="Spice Garden Restaurant",
+        name="Spice Garden",
+        code="SG-01",
+        city="Bengaluru",
         legal_name="Spice Garden Hospitality Pvt Ltd",
         email="hello@spicegarden.example",
         phone="+91-9876543210",
@@ -169,9 +176,24 @@ def seed_enterprise(db, users: dict[str, User]) -> None:
     db.add(restaurant)
     db.flush()
 
+    coastal = Restaurant(
+        name="Coastal Bowl",
+        code="CB-02",
+        city="Chennai",
+        legal_name="Coastal Bowl Foods Pvt Ltd",
+        email="hello@coastalbowl.example",
+        phone="+91-9876500002",
+        address="T Nagar, Chennai",
+        timezone="Asia/Kolkata",
+        currency="INR",
+        created_by=users["super_admin"].id,
+    )
+    db.add(coastal)
+    db.flush()
+
     branch = Branch(
         restaurant_id=restaurant.id,
-        name="MG Road Flagship",
+        name="MG Road",
         code="BLR-MG",
         address="MG Road, Bengaluru",
         phone="+91-9876543210",
@@ -384,9 +406,17 @@ def seed_legacy_forecasts(db) -> None:
 
 
 def run_all_seeds() -> None:
+    from app.core.config import settings
+
     with session_scope() as db:
         seed_rbac(db)
         users = seed_users(db)
-        seed_enterprise(db, users)
-        seed_legacy_forecasts(db)
+        if settings.seed_enterprise_data:
+            seed_enterprise(db, users)
+        else:
+            logger.info("Enterprise seed skipped — SEED_ENTERPRISE_DATA=false")
+        if settings.seed_legacy_forecasts:
+            seed_legacy_forecasts(db)
+        else:
+            logger.info("Legacy forecast seed skipped — SEED_LEGACY_FORECASTS=false")
     logger.info("All seeds completed at %s", datetime.now(timezone.utc).isoformat())

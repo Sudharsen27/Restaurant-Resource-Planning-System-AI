@@ -19,11 +19,12 @@ class AppException(Exception):
 
 
 class NotFoundError(AppException):
-    def __init__(self, resource: str, resource_id: int) -> None:
-        super().__init__(
-            f"{resource} with id {resource_id} not found",
-            status_code=404,
-        )
+    def __init__(self, resource: str, resource_id: Any = None) -> None:
+        if resource_id is None:
+            message = f"{resource} not found"
+        else:
+            message = f"{resource} with id {resource_id} not found"
+        super().__init__(message, status_code=404)
 
 
 class ConflictError(AppException):

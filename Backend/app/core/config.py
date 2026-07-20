@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     use_alembic: bool = True
     allow_create_all: bool = False
 
+    # Seed policy — interview/demo: keep enterprise bootstrap ON.
+    # Production empty catalog: set SEED_ENTERPRISE_DATA=false (users/RBAC still seed).
+    seed_enterprise_data: bool = True
+    seed_legacy_forecasts: bool = True
+
     # Paths (override in .env for deployments)
     models_dir: Path = Field(default_factory=lambda: DEFAULT_MODELS_DIR)
     dataset_csv_path: Path = Field(default_factory=lambda: DEFAULT_DATASET_CSV)

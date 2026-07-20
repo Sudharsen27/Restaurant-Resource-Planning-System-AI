@@ -34,6 +34,9 @@ class InventoryTransactionType(str, enum.Enum):
     ADJUSTMENT = "ADJUSTMENT"
     WASTE = "WASTE"
     TRANSFER = "TRANSFER"
+    RETURN = "RETURN"
+    OPENING = "OPENING"
+    CLOSING = "CLOSING"
 
 
 class OrderStatus(str, enum.Enum):
@@ -66,7 +69,22 @@ class PurchaseOrderStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"
     APPROVED = "APPROVED"
+    ORDERED = "ORDERED"
     RECEIVED = "RECEIVED"
+    CANCELLED = "CANCELLED"
+
+
+class ProductLifecycleStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    ARCHIVED = "ARCHIVED"
+
+
+class TransferStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
 
 
@@ -81,6 +99,21 @@ class NotificationType(str, enum.Enum):
     WARNING = "WARNING"
     ALERT = "ALERT"
     SYSTEM = "SYSTEM"
+
+
+class TableStatus(str, enum.Enum):
+    AVAILABLE = "AVAILABLE"
+    OCCUPIED = "OCCUPIED"
+    RESERVED = "RESERVED"
+    CLEANING = "CLEANING"
+    MAINTENANCE = "MAINTENANCE"
+
+
+class DocumentType(str, enum.Enum):
+    BUSINESS_LICENSE = "BUSINESS_LICENSE"
+    GST_CERTIFICATE = "GST_CERTIFICATE"
+    FSSAI_LICENSE = "FSSAI_LICENSE"
+    OTHER = "OTHER"
 
 
 class AuditAction(str, enum.Enum):
