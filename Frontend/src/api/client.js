@@ -1,5 +1,11 @@
 import axios from 'axios'
 import { API_BASE_URL, API_TIMEOUT_MS } from '../constants/config'
+import {
+  clearAuthSession,
+  getAccessToken,
+  getRefreshToken,
+  setAuthSession,
+} from '../store'
 
 /**
  * Shared Axios client with interceptors.
@@ -11,9 +17,24 @@ const api = axios.create({
   timeout: API_TIMEOUT_MS,
 })
 
+let refreshPromise = null
+
+async function refreshAccessToken() {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) throw new Error('No refresh token')
+  const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+    refresh_token: refreshToken,
+  })
+  const tokens = data.data
+  setAuthSession({
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+  })
+  return tokens.access_token
+}
+
 api.interceptors.request.use((config) => {
-  // JWT-ready: attach token when auth is enabled
-  const token = localStorage.getItem('rrps_access_token')
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -22,7 +43,29 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const original = error.config
+    const status = error.response?.status
+    const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/refresh')
+
+    if (status === 401 && original && !original._retry && !isAuthRoute) {
+      original._retry = true
+      try {
+        refreshPromise = refreshPromise || refreshAccessToken()
+        const accessToken = await refreshPromise
+        refreshPromise = null
+        original.headers.Authorization = `Bearer ${accessToken}`
+        return api(original)
+      } catch (refreshError) {
+        refreshPromise = null
+        clearAuthSession()
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.assign('/login')
+        }
+        return Promise.reject(refreshError)
+      }
+    }
+
     const data = error.response?.data
     const message =
       (typeof data?.message === 'string' && data.message) ||
