@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.auth import router as auth_router
 from app.api.dataset import router as dataset_router
 from app.api.feedback_learning import router as feedback_learning_router
 from app.api.forecast import router as forecast_router
@@ -17,6 +18,7 @@ from app.api.staff import router as staff_router
 v1_router = APIRouter()
 v1_router.include_router(root_router)
 v1_router.include_router(health_router)
+v1_router.include_router(auth_router)
 v1_router.include_router(latest_snapshots_router)
 v1_router.include_router(forecast_ml_router)
 v1_router.include_router(forecast_router)

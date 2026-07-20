@@ -10,6 +10,8 @@ from sqlalchemy import select
 from app.core.logging import get_logger
 from app.db.session import session_scope
 from app.models import (
+    Permission,
+    Role,
     Branch,
     Category,
     Customer,
@@ -26,8 +28,12 @@ from app.models import (
     User,
 )
 from app.models.enums import EmployeeRole, InventoryStatus, UserRole
+from app.services.auth_service import hash_password
 
 logger = get_logger(__name__)
+
+# Demo passwords meet complexity rules (documented in AUTH report)
+DEMO_PASSWORD = "Admin@12345"
 
 
 def seed_users(db) -> dict[str, User]:
@@ -36,15 +42,23 @@ def seed_users(db) -> dict[str, User]:
         for u in db.scalars(select(User).where(User.is_deleted.is_(False))).all()
     }
 
-    def ensure(email: str, full_name: str, role: UserRole, password_hash: str) -> User:
+    def ensure(email: str, full_name: str, role: UserRole, password: str) -> User:
         existing = by_email.get(email)
         if existing:
+            # Keep demo credentials usable after auth upgrades
+            existing.password_hash = hash_password(password)
+            existing.role = role
+            existing.email_verified = True
+            existing.is_active = True
+            existing.failed_login_attempts = 0
+            existing.locked_until = None
             return existing
         user = User(
             full_name=full_name,
             email=email,
-            password_hash=password_hash,
+            password_hash=hash_password(password),
             role=role,
+            email_verified=True,
         )
         db.add(user)
         db.flush()
@@ -55,21 +69,85 @@ def seed_users(db) -> dict[str, User]:
         "superadmin@restaurant.com",
         "Super Admin",
         UserRole.SUPER_ADMIN,
-        "placeholder_hash_superadmin",
+        DEMO_PASSWORD,
     )
     admin = ensure(
         "admin@restaurant.com",
         "Admin User",
         UserRole.ADMIN,
-        "placeholder_hash_admin",
+        DEMO_PASSWORD,
     )
     manager = ensure(
         "manager@restaurant.com",
         "Manager User",
         UserRole.MANAGER,
-        "placeholder_hash_manager",
+        DEMO_PASSWORD,
     )
     return {"super_admin": super_admin, "admin": admin, "manager": manager}
+
+
+def seed_rbac(db) -> None:
+    role_names = [
+        "SUPER_ADMIN",
+        "RESTAURANT_OWNER",
+        "BRANCH_MANAGER",
+        "INVENTORY_MANAGER",
+        "CASHIER",
+        "KITCHEN_STAFF",
+        "EMPLOYEE",
+        "ADMIN",
+        "MANAGER",
+    ]
+    permissions = [
+        "users.read",
+        "users.create",
+        "users.update",
+        "users.delete",
+        "inventory.read",
+        "inventory.update",
+        "orders.read",
+        "orders.create",
+        "reports.read",
+        "settings.update",
+    ]
+
+    existing_roles = {r.name: r for r in db.scalars(select(Role)).all()}
+    existing_permissions = {p.code: p for p in db.scalars(select(Permission)).all()}
+
+    for name in role_names:
+        if name not in existing_roles:
+            role = Role(name=name, description=f"{name.replace('_', ' ').title()} role")
+            db.add(role)
+            db.flush()
+            existing_roles[name] = role
+
+    for code in permissions:
+        if code not in existing_permissions:
+            permission = Permission(code=code, description=code)
+            db.add(permission)
+            db.flush()
+            existing_permissions[code] = permission
+
+    super_admin = existing_roles["SUPER_ADMIN"]
+    manager = existing_roles["MANAGER"]
+    inventory_manager = existing_roles["INVENTORY_MANAGER"]
+    cashier = existing_roles["CASHIER"]
+
+    super_admin.permissions = list(existing_permissions.values())
+    manager.permissions = [
+        existing_permissions["users.read"],
+        existing_permissions["inventory.read"],
+        existing_permissions["orders.read"],
+        existing_permissions["reports.read"],
+    ]
+    inventory_manager.permissions = [
+        existing_permissions["inventory.read"],
+        existing_permissions["inventory.update"],
+    ]
+    cashier.permissions = [
+        existing_permissions["orders.read"],
+        existing_permissions["orders.create"],
+    ]
 
 
 def seed_enterprise(db, users: dict[str, User]) -> None:
@@ -307,6 +385,7 @@ def seed_legacy_forecasts(db) -> None:
 
 def run_all_seeds() -> None:
     with session_scope() as db:
+        seed_rbac(db)
         users = seed_users(db)
         seed_enterprise(db, users)
         seed_legacy_forecasts(db)

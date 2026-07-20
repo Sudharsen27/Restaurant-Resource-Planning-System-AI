@@ -1,5 +1,6 @@
 """Middleware package exports."""
 
+from app.middleware.auth_middleware import AuthenticationMiddleware
 from app.middleware.request_logging import (
     RateLimitMiddleware,
     RequestLoggingMiddleware,
@@ -10,4 +11,5 @@ __all__ = [
     "RequestLoggingMiddleware",
     "SecurityHeadersMiddleware",
     "RateLimitMiddleware",
+    "AuthenticationMiddleware",
 ]

@@ -10,6 +10,7 @@ from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import setup_logging
 from app.database.init_db import init_database, seed_placeholder_data
 from app.middleware import (
+    AuthenticationMiddleware,
     RateLimitMiddleware,
     RequestLoggingMiddleware,
     SecurityHeadersMiddleware,
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     # Middleware order: last added runs first on request.
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(AuthenticationMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(
         CORSMiddleware,

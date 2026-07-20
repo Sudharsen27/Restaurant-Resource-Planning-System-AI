@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     # CORS (comma-separated origins)
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
     # Database
     database_url: str = "postgresql://postgres:postgres@localhost:5432/restaurant_rps"
@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production-use-openssl-rand-hex-32"
     jwt_algorithm: str = JWT_ALGORITHM_DEFAULT
     jwt_expire_minutes: int = JWT_EXPIRE_MINUTES_DEFAULT
+    jwt_access_expire_minutes: int = 30
+    jwt_refresh_expire_days: int = 14
+    password_min_length: int = 8
+    max_failed_login_attempts: int = 5
+    account_lock_minutes: int = 30
     rate_limit_enabled: bool = False
     rate_limit_requests: int = 100
     rate_limit_window_seconds: int = 60

@@ -1,4 +1,10 @@
 from app.models.accuracy_history import AccuracyHistory
+from app.models.auth import (
+    EmailVerificationToken,
+    PasswordHistory,
+    PasswordResetToken,
+    UserSession,
+)
 from app.models.customer_forecast import CustomerForecast
 from app.models.dashboard_summary_record import DashboardSummaryRecord
 from app.models.enterprise import (
@@ -68,4 +74,8 @@ __all__ = [
     "PurchaseItem",
     "Notification",
     "AuditLog",
+    "UserSession",
+    "PasswordResetToken",
+    "EmailVerificationToken",
+    "PasswordHistory",
 ]
