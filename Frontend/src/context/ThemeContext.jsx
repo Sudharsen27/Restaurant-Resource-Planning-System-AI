@@ -1,28 +1,73 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 const ThemeContext = createContext(null)
+const STORAGE_KEY = 'rrps-theme' // 'light' | 'dark' | 'system'
 
-export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('rrps-theme')
-    return saved ? saved === 'dark' : true
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-    localStorage.setItem('rrps-theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
-
-  const toggleTheme = () => setDarkMode((prev) => !prev)
-
-  return (
-    <ThemeContext.Provider value={{ darkMode, toggleTheme, setDarkMode }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+function getSystemDark() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-// Hook export paired with provider — standard React context pattern
+function resolveDark(preference) {
+  if (preference === 'system') return getSystemDark()
+  return preference === 'dark'
+}
+
+export function ThemeProvider({ children }) {
+  const [preference, setPreference] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
+    // migrate legacy boolean storage
+    if (saved === 'true') return 'dark'
+    if (saved === 'false') return 'light'
+    return 'system'
+  })
+
+  const [darkMode, setDarkMode] = useState(() => resolveDark(preference))
+
+  useEffect(() => {
+    const apply = () => {
+      const isDark = resolveDark(preference)
+      setDarkMode(isDark)
+      document.documentElement.classList.toggle('dark', isDark)
+      localStorage.setItem(STORAGE_KEY, preference)
+    }
+    apply()
+
+    if (preference !== 'system') return undefined
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => apply()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [preference])
+
+  const toggleTheme = useCallback(() => {
+    setPreference((prev) => {
+      const currentDark = resolveDark(prev)
+      return currentDark ? 'light' : 'dark'
+    })
+  }, [])
+
+  const setTheme = useCallback((value) => {
+    if (value === 'light' || value === 'dark' || value === 'system') {
+      setPreference(value)
+    }
+  }, [])
+
+  const value = useMemo(
+    () => ({
+      darkMode,
+      preference,
+      theme: preference,
+      toggleTheme,
+      setTheme,
+      setDarkMode: (v) => setPreference(v ? 'dark' : 'light'),
+    }),
+    [darkMode, preference, toggleTheme, setTheme],
+  )
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const ctx = useContext(ThemeContext)

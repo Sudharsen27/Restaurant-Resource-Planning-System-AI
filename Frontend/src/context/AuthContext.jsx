@@ -6,15 +6,9 @@ import {
   setAuthSession,
 } from '../store'
 import * as authService from '../services/authService'
+import { ROLE_PATHS } from '../constants/navigation'
 
 const AuthContext = createContext(null)
-
-const ROLE_NAV = {
-  SUPER_ADMIN: ['/', '/forecast', '/staff', '/inventory', '/feedback', '/analytics', '/history', '/settings', '/profile', '/sessions'],
-  ADMIN: ['/', '/forecast', '/staff', '/inventory', '/feedback', '/analytics', '/history', '/settings', '/profile', '/sessions'],
-  MANAGER: ['/', '/forecast', '/staff', '/inventory', '/feedback', '/analytics', '/history', '/settings', '/profile', '/sessions'],
-  EMPLOYEE: ['/', '/forecast', '/staff', '/inventory', '/profile', '/sessions'],
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser())
@@ -73,7 +67,8 @@ export function AuthProvider({ children }) {
   const canAccessPath = useCallback(
     (path) => {
       if (!user) return false
-      const allowed = ROLE_NAV[user.role] || ROLE_NAV.EMPLOYEE
+      const allowed = ROLE_PATHS[user.role] || ROLE_PATHS.EMPLOYEE
+      if (allowed.includes('*')) return true
       return allowed.some((p) => (p === '/' ? path === '/' : path === p || path.startsWith(`${p}/`)))
     },
     [user],

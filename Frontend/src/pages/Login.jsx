@@ -1,89 +1,147 @@
-import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Brain, Loader2 } from 'lucide-react'
-import Button from '../components/ui/Button'
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import AuthLayout from '../components/auth/AuthLayout'
+import { AuthCard } from '../components/auth/AuthCard'
+import { AuthAlert, AuthCheckbox, AuthInput, PasswordInput } from '../components/auth/AuthFields'
+import {
+  AuthPrimaryButton,
+  SocialLoginButton,
+  AuthDivider,
+  FormFooter,
+  AuthLink,
+} from '../components/auth/AuthActions'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { APP_NAME } from '../constants/config'
 
 export default function Login() {
   const { login, isAuthenticated, bootstrapping } = useAuth()
-  const { success } = useToast()
+  const { success, error: toastError } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState('admin@restaurant.com')
-  const [password, setPassword] = useState('Admin@12345')
+  const emailRef = useRef(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(true)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState({})
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rrps_remember_email')
+      if (saved) {
+        setEmail(saved)
+        setRemember(true)
+      }
+    } catch {
+      /* ignore */
+    }
+    emailRef.current?.focus()
+  }, [])
 
   if (!bootstrapping && isAuthenticated) {
     return <Navigate to={location.state?.from || '/'} replace />
   }
 
+  function validate() {
+    const next = {}
+    if (!email.trim()) next.email = 'Enter your email'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = 'Enter a valid email address'
+    if (!password) next.password = 'Enter your password'
+    else if (password.length < 8) next.password = 'Password must be at least 8 characters'
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
-    setError('')
+    if (!validate()) {
+      emailRef.current?.focus()
+      return
+    }
     setLoading(true)
+    setErrors({})
     try {
       await login(email.trim(), password)
-      success('Login successful')
+      try {
+        if (remember) localStorage.setItem('rrps_remember_email', email.trim())
+        else localStorage.removeItem('rrps_remember_email')
+      } catch {
+        /* ignore */
+      }
+      success('Welcome back')
       navigate(location.state?.from || '/', { replace: true })
     } catch (err) {
-      setError(err.message || 'Login failed')
+      setErrors({ form: err.message || 'Invalid email or password' })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 dark:bg-black">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 dark:bg-zinc-100">
-            <Brain className="h-5 w-5 text-white dark:text-zinc-900" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Sign in</h1>
-            <p className="text-xs text-slate-500">{APP_NAME}</p>
-          </div>
-        </div>
+    <AuthLayout>
+      <AuthCard
+        title="Sign in"
+        description="Access your restaurant workspace."
+        footer={
+          <FormFooter>
+            New here? <AuthLink to="/register">Create an account</AuthLink>
+          </FormFooter>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-5" noValidate>
+          <AuthInput
+            ref={emailRef}
+            id="login-email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (errors.email || errors.form) setErrors((p) => ({ ...p, email: undefined, form: undefined }))
+            }}
+            error={errors.email}
+            required
+          />
+          <PasswordInput
+            id="login-password"
+            label="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (errors.password || errors.form) setErrors((p) => ({ ...p, password: undefined, form: undefined }))
+            }}
+            error={errors.password}
+            required
+            minLength={8}
+          />
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-            />
+          <div className="flex items-center justify-between gap-3">
+            <AuthCheckbox
+              id="login-remember"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            >
+              Remember me
+            </AuthCheckbox>
+            <AuthLink to="/forgot-password" className="shrink-0 text-sm">
+              Forgot password?
+            </AuthLink>
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-            />
+
+          {errors.form && <AuthAlert>{errors.form}</AuthAlert>}
+
+          <div className="space-y-3 pt-1">
+            <AuthPrimaryButton loading={loading}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </AuthPrimaryButton>
+            <AuthDivider />
+            <SocialLoginButton onClick={() => toastError('Google sign-in will be available soon')} />
           </div>
-          {error && <p className="text-sm text-rose-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
         </form>
-
-        <div className="mt-4 flex justify-between text-sm">
-          <Link to="/forgot-password" className="text-blue-600 hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-        <p className="mt-6 text-xs text-slate-500">Demo: admin@restaurant.com / Admin@12345</p>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   )
 }

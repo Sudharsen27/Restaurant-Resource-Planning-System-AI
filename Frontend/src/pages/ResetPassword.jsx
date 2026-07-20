@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import Button from '../components/ui/Button'
+import { useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import AuthLayout from '../components/auth/AuthLayout'
+import { AuthCard } from '../components/auth/AuthCard'
+import { AuthInput, PasswordInput, PasswordStrength } from '../components/auth/AuthFields'
+import { AuthPrimaryButton, FormFooter, AuthLink } from '../components/auth/AuthActions'
 import { resetPassword } from '../services/authService'
 import { useToast } from '../context/ToastContext'
 
@@ -8,12 +11,33 @@ export default function ResetPassword() {
   const { success, error } = useToast()
   const navigate = useNavigate()
   const [params] = useSearchParams()
+  const hasTokenParam = Boolean(params.get('token'))
+  const firstRef = useRef(null)
   const [token, setToken] = useState(params.get('token') || '')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({})
+
+  function validate() {
+    const next = {}
+    if (!token.trim()) next.token = 'Reset token is required'
+    if (!password) next.password = 'Enter a new password'
+    else if (password.length < 8) next.password = 'Use at least 8 characters'
+    else if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
+      next.password = 'Include upper, lower, and a number'
+    }
+    if (confirm !== password) next.confirm = 'Passwords do not match'
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
 
   async function onSubmit(e) {
     e.preventDefault()
+    if (!validate()) {
+      firstRef.current?.focus()
+      return
+    }
     setLoading(true)
     try {
       await resetPassword(token.trim(), password)
@@ -27,35 +51,56 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 dark:bg-black">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-950">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Reset password</h1>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <input
-            type="text"
+    <AuthLayout>
+      <AuthCard
+        title="Choose a new password"
+        description="Use a strong password you haven’t used here before."
+        footer={
+          <FormFooter>
+            <AuthLink to="/login">← Back to sign in</AuthLink>
+          </FormFooter>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-5" noValidate>
+          {!hasTokenParam && (
+            <AuthInput
+              ref={firstRef}
+              id="reset-token"
+              label="Reset token"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              error={errors.token}
+              required
+            />
+          )}
+          <div className="space-y-2">
+            <PasswordInput
+              ref={hasTokenParam ? firstRef : undefined}
+              id="reset-password"
+              label="New password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
+              required
+              minLength={8}
+            />
+            <PasswordStrength password={password} />
+          </div>
+          <PasswordInput
+            id="reset-confirm"
+            label="Confirm password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            error={errors.confirm}
             required
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="Reset token"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
           />
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password (Aa1!…)"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-          />
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Saving…' : 'Reset password'}
-          </Button>
+          <AuthPrimaryButton loading={loading}>
+            {loading ? 'Saving…' : 'Update password'}
+          </AuthPrimaryButton>
         </form>
-        <Link to="/login" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
-          Back to login
-        </Link>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   )
 }

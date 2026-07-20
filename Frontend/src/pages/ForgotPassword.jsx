@@ -1,22 +1,41 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import Button from '../components/ui/Button'
+import AuthLayout from '../components/auth/AuthLayout'
+import { AuthCard } from '../components/auth/AuthCard'
+import { AuthAlert, AuthInput } from '../components/auth/AuthFields'
+import { AuthPrimaryButton, FormFooter, AuthLink } from '../components/auth/AuthActions'
 import { forgotPassword } from '../services/authService'
 import { useToast } from '../context/ToastContext'
 
 export default function ForgotPassword() {
   const { success, error } = useToast()
+  const emailRef = useRef(null)
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [resetToken, setResetToken] = useState('')
+  const [fieldError, setFieldError] = useState('')
+  const [sent, setSent] = useState(false)
 
   async function onSubmit(e) {
     e.preventDefault()
+    if (!email.trim()) {
+      setFieldError('Enter your email')
+      emailRef.current?.focus()
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setFieldError('Enter a valid email address')
+      emailRef.current?.focus()
+      return
+    }
+    setFieldError('')
     setLoading(true)
     setResetToken('')
+    setSent(false)
     try {
       const res = await forgotPassword(email.trim())
       setResetToken(res?.data?.reset_token || '')
+      setSent(true)
       success(res.message || 'If the account exists, reset instructions were generated')
     } catch (err) {
       error(err.message || 'Request failed')
@@ -26,37 +45,60 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 dark:bg-black">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-950">
-        <h1 className="text-lg font-semibold text-slate-900 dark:text-white">Forgot password</h1>
-        <p className="mt-1 text-sm text-slate-500">Enter your account email to generate a reset token.</p>
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <input
+    <AuthLayout>
+      <AuthCard
+        title="Reset your password"
+        description="Enter your account email and we’ll send a reset link if it exists."
+        footer={
+          <FormFooter>
+            <AuthLink to="/login">← Back to sign in</AuthLink>
+          </FormFooter>
+        }
+      >
+        <form onSubmit={onSubmit} className="space-y-5" noValidate>
+          <AuthInput
+            ref={emailRef}
+            id="forgot-email"
+            label="Email"
             type="email"
-            required
+            autoComplete="email"
+            autoFocus
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@restaurant.com"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            onChange={(e) => {
+              setEmail(e.target.value)
+              if (fieldError) setFieldError('')
+            }}
+            error={fieldError}
+            required
           />
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Sending…' : 'Request reset'}
-          </Button>
+          <AuthPrimaryButton loading={loading}>
+            {loading ? 'Sending…' : 'Send reset link'}
+          </AuthPrimaryButton>
         </form>
-        {resetToken && (
-          <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs break-all dark:bg-slate-800 dark:text-slate-200">
-            Dev reset token: {resetToken}
-            <div className="mt-2">
-              <Link className="text-blue-600 hover:underline" to={`/reset-password?token=${encodeURIComponent(resetToken)}`}>
-                Continue to reset
-              </Link>
-            </div>
+
+        {sent && (
+          <div className="mt-6 space-y-3">
+            <AuthAlert variant="success">
+              <p className="font-medium">Check your inbox</p>
+              <p className="mt-1 text-xs opacity-90">
+                If an account exists for that address, reset instructions are on the way.
+              </p>
+            </AuthAlert>
+            {resetToken && (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-xs text-slate-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                <p className="font-medium text-slate-800 dark:text-zinc-200">Dev only · Reset token</p>
+                <p className="mt-1 break-all font-mono text-[11px] leading-relaxed">{resetToken}</p>
+                <Link
+                  className="mt-2 inline-flex font-semibold text-blue-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400"
+                  to={`/reset-password?token=${encodeURIComponent(resetToken)}`}
+                >
+                  Continue to reset password
+                </Link>
+              </div>
+            )}
           </div>
         )}
-        <Link to="/login" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
-          Back to login
-        </Link>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   )
 }
