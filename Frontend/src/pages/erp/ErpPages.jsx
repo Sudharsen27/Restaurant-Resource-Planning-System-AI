@@ -13,12 +13,13 @@ import {
 } from '../../services/restaurantService'
 import { listBranches } from '../../services/branchService'
 import { listCategories, createCategory } from '../../services/categoryService'
-import { listProducts, createProduct } from '../../services/productService'
+import { listProducts, createProduct, exportProductsCsv, importProductsCsv } from '../../services/productService'
 import { listSuppliers, createSupplier } from '../../services/supplierService'
 import { listCustomers } from '../../services/customerService'
 import { listEmployees } from '../../services/employeeService'
 import { listOrders } from '../../services/orderService'
 import { listInventoryItems } from '../../services/inventoryItemService'
+import { adjustInventory } from '../../services/catalogService'
 import { useOrg } from '../../context/OrgContext'
 import { useToast } from '../../context/ToastContext'
 import { Input, Select } from '../../components/forms/FormControls'
@@ -363,11 +364,60 @@ export function ProductsPage() {
         rows={data || []}
         loading={isLoading}
         headerActions={
-          <AddEntityButton
-            label="Add product"
-            onClick={() => setOpen(true)}
-            disabled={!restaurant?.id}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              disabled={!restaurant?.id}
+              onClick={async () => {
+                try {
+                  const blob = await exportProductsCsv(
+                    restaurant?.id ? { restaurant_id: restaurant.id } : {},
+                  )
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'products.csv'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                  success('Products exported')
+                } catch (err) {
+                  toastError(err?.message || 'Export failed')
+                }
+              }}
+            >
+              Export CSV
+            </Button>
+            <label className="inline-flex cursor-pointer items-center">
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                disabled={!restaurant?.id}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (!file || !restaurant?.id) return
+                  try {
+                    const res = await importProductsCsv(restaurant.id, file)
+                    queryClient.invalidateQueries({ queryKey: ['products'] })
+                    const d = res?.data || {}
+                    success(`Import: ${d.created || 0} created, ${d.updated || 0} updated`)
+                    if (d.errors?.length) toastError(d.errors.slice(0, 3).join('; '))
+                  } catch (err) {
+                    toastError(err?.message || 'Import failed')
+                  }
+                }}
+              />
+              <span className="inline-flex h-9 items-center rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900">
+                Import CSV
+              </span>
+            </label>
+            <AddEntityButton
+              label="Add product"
+              onClick={() => setOpen(true)}
+              disabled={!restaurant?.id}
+            />
+          </div>
         }
         columns={[
           { key: 'name', label: 'Product' },
@@ -580,7 +630,26 @@ export function OrdersPage() {
 }
 
 export function StockPage() {
-  const { restaurant } = useOrg()
+  const { restaurant, branch } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [adjustOpen, setAdjustOpen] = useState(false)
+  const [adjustForm, setAdjustForm] = useState({
+    product_id: '',
+    quantity_delta: '1',
+    transaction_type: 'ADJUSTMENT',
+    notes: '',
+  })
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products', restaurant?.id],
+    enabled: !!restaurant?.id,
+    queryFn: async () => {
+      const res = await listProducts({ restaurant_id: restaurant.id, limit: 200 })
+      return res.data || []
+    },
+  })
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['inventory-items', restaurant?.id],
     queryFn: async () => {
@@ -591,6 +660,25 @@ export function StockPage() {
     },
   })
 
+  const adjustMutation = useMutation({
+    mutationFn: () =>
+      adjustInventory({
+        branch_id: branch.id,
+        product_id: adjustForm.product_id,
+        quantity_delta: Number(adjustForm.quantity_delta),
+        transaction_type: adjustForm.transaction_type,
+        notes: adjustForm.notes || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] })
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['catalog-dashboard'] })
+      success('Stock adjusted')
+      setAdjustOpen(false)
+    },
+    onError: (err) => toastError(err?.message || 'Adjust failed'),
+  })
+
   return (
     <>
       {isError && (
@@ -598,18 +686,75 @@ export function StockPage() {
       )}
       <EntityListPage
         title="Stock levels"
-        description="Branch inventory on hand (ERP)"
+        description="On-hand, reserved, damaged, and available quantity by branch"
         entity="inventory-items"
         rows={data || []}
         loading={isLoading}
+        headerActions={
+          <AddEntityButton
+            label="Adjust stock"
+            onClick={() => setAdjustOpen(true)}
+            disabled={!branch?.id}
+          />
+        }
         columns={[
           { key: 'product', label: 'Product' },
           { key: 'branch', label: 'Branch' },
-          { key: 'quantity_on_hand', label: 'Qty' },
+          { key: 'quantity_on_hand', label: 'On hand' },
+          { key: 'reserved_quantity', label: 'Reserved' },
+          { key: 'damaged_quantity', label: 'Damaged' },
+          { key: 'available_stock', label: 'Available' },
           { key: 'reorder_level', label: 'Reorder' },
           { key: 'status', label: 'Status' },
         ]}
       />
+      <AppModal open={adjustOpen} onClose={() => setAdjustOpen(false)} title="Adjust stock">
+        <div className="space-y-3">
+          <Select
+            label="Product *"
+            value={adjustForm.product_id}
+            onChange={(e) => setAdjustForm({ ...adjustForm, product_id: e.target.value })}
+            options={[
+              { value: '', label: 'Select…' },
+              ...products.map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
+            ]}
+          />
+          <Input
+            label="Quantity delta (+/-) *"
+            value={adjustForm.quantity_delta}
+            onChange={(e) => setAdjustForm({ ...adjustForm, quantity_delta: e.target.value })}
+          />
+          <Select
+            label="Type"
+            value={adjustForm.transaction_type}
+            onChange={(e) => setAdjustForm({ ...adjustForm, transaction_type: e.target.value })}
+            options={[
+              { value: 'ADJUSTMENT', label: 'Adjustment' },
+              { value: 'WASTE', label: 'Waste' },
+              { value: 'DAMAGE', label: 'Damage' },
+              { value: 'PRODUCTION', label: 'Production' },
+              { value: 'RETURN', label: 'Return' },
+              { value: 'OPENING', label: 'Opening' },
+            ]}
+          />
+          <Input
+            label="Notes"
+            value={adjustForm.notes}
+            onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setAdjustOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!adjustForm.product_id || !adjustForm.quantity_delta || adjustMutation.isPending}
+              onClick={() => adjustMutation.mutate()}
+            >
+              Post
+            </Button>
+          </div>
+        </div>
+      </AppModal>
     </>
   )
 }

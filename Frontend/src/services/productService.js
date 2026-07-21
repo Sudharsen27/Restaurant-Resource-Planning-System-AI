@@ -24,3 +24,21 @@ export async function deleteProduct(id) {
   const { data } = await api.delete(`/products/${id}`)
   return data
 }
+
+export async function exportProductsCsv(params = {}) {
+  const { data } = await api.get('/products/export/csv', {
+    params,
+    responseType: 'blob',
+  })
+  return data
+}
+
+export async function importProductsCsv(restaurantId, file) {
+  const form = new FormData()
+  form.append('restaurant_id', restaurantId)
+  form.append('file', file)
+  const { data } = await api.post('/products/import/csv', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}

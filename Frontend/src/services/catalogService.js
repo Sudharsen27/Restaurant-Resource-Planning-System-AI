@@ -10,6 +10,21 @@ export async function listUnits(params = {}) {
   return data
 }
 
+export async function createUnit(payload) {
+  const { data } = await api.post('/units', payload)
+  return data
+}
+
+export async function listUnitConversions() {
+  const { data } = await api.get('/units/conversions')
+  return data
+}
+
+export async function createUnitConversion(payload) {
+  const { data } = await api.post('/units/conversions', payload)
+  return data
+}
+
 export async function seedDefaultUnits(params = {}) {
   const { data } = await api.post('/units/seed-defaults', null, { params })
   return data

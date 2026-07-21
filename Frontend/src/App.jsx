@@ -94,6 +94,12 @@ const StockTransfersPage = lazy(() =>
 const InventoryTransactionsPage = lazy(() =>
   import('./pages/erp/CatalogPages').then((m) => ({ default: m.InventoryTransactionsPage })),
 )
+const WarehousesPage = lazy(() =>
+  import('./pages/erp/CatalogPages').then((m) => ({ default: m.WarehousesPage })),
+)
+const UnitsManagePage = lazy(() =>
+  import('./pages/erp/CatalogPages').then((m) => ({ default: m.UnitsManagePage })),
+)
 
 function App() {
   return (
@@ -123,6 +129,8 @@ function App() {
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="stock" element={<StockPage />} />
               <Route path="suppliers" element={<SuppliersPage />} />
+              <Route path="warehouses" element={<WarehousesPage />} />
+              <Route path="units" element={<UnitsManagePage />} />
               <Route path="purchase-orders" element={<PurchaseOrdersPage />} />
               <Route path="goods-receipts" element={<GoodsReceiptsPage />} />
               <Route path="recipes" element={<RecipesPage />} />

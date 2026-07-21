@@ -45,7 +45,12 @@ import {
   submitPurchaseOrder,
   submitStockTransfer,
   approveStockTransfer,
+  listUnits,
+  createUnit,
+  listUnitConversions,
+  createUnitConversion,
 } from '../../services/catalogService'
+import { listWarehouses, createWarehouse } from '../../services/warehouseService'
 
 const MODULES = [
   { to: '/purchase-orders', title: 'Purchase orders', blurb: 'Draft → approve → order', icon: ClipboardList },
@@ -1133,7 +1138,7 @@ export function InventoryTransactionsPage() {
       {isError && <p className="mb-3 text-sm text-rose-600">{error?.message}</p>}
       <EntityListPage
         title="Inventory transactions"
-        description="Purchase, sale, waste, adjustment, transfer, return"
+        description="Purchase, sale, waste, damage, production, adjustment, transfer, return"
         entity="inventory-transactions"
         rows={data || []}
         loading={isLoading}
@@ -1145,6 +1150,312 @@ export function InventoryTransactionsPage() {
           { key: 'reference', label: 'Reference', render: (v) => v || '—' },
         ]}
       />
+    </>
+  )
+}
+
+export function WarehousesPage() {
+  const { restaurant, branch } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    code: '',
+    name: '',
+    location: '',
+    manager_name: '',
+    capacity: '1000',
+    branch_id: '',
+  })
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches', restaurant?.id],
+    enabled: !!restaurant?.id,
+    queryFn: async () => {
+      const res = await listBranches({ restaurant_id: restaurant.id })
+      return res.data || []
+    },
+  })
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['warehouses', restaurant?.id],
+    queryFn: async () =>
+      asList(await listWarehouses(restaurant?.id ? { restaurant_id: restaurant.id } : {})),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createWarehouse({
+        restaurant_id: restaurant.id,
+        branch_id: form.branch_id || branch?.id,
+        code: form.code.trim(),
+        name: form.name.trim(),
+        location: form.location || null,
+        manager_name: form.manager_name || null,
+        capacity: Number(form.capacity || 0),
+        is_active: true,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouses'] })
+      success('Warehouse created')
+      setOpen(false)
+      setForm({ code: '', name: '', location: '', manager_name: '', capacity: '1000', branch_id: '' })
+    },
+    onError: (err) => toastError(err?.message || 'Could not create warehouse'),
+  })
+
+  return (
+    <>
+      {isError && <p className="mb-3 text-sm text-rose-600">{error?.message}</p>}
+      <EntityListPage
+        title="Warehouses"
+        description="Branch storage locations with capacity and live stock"
+        entity="warehouses"
+        rows={data || []}
+        loading={isLoading}
+        headerActions={
+          <AddEntityButton
+            label="Add warehouse"
+            onClick={() => {
+              setForm((f) => ({ ...f, branch_id: branch?.id || branches[0]?.id || '' }))
+              setOpen(true)
+            }}
+            disabled={!restaurant?.id}
+          />
+        }
+        columns={[
+          { key: 'code', label: 'Code', render: (v) => <CodeChip>{v}</CodeChip> },
+          { key: 'name', label: 'Name' },
+          { key: 'branch_name', label: 'Branch' },
+          { key: 'location', label: 'Location', render: (v) => v || '—' },
+          { key: 'manager_name', label: 'Manager', render: (v) => v || '—' },
+          { key: 'current_stock', label: 'Stock', render: (v) => formatNumber(v) },
+          { key: 'capacity', label: 'Capacity', render: (v) => formatNumber(v) },
+          {
+            key: 'utilization_percent',
+            label: 'Util %',
+            render: (v) => `${Number(v || 0).toFixed(0)}%`,
+          },
+          { key: 'status', label: 'Status' },
+        ]}
+      />
+      <AppModal open={open} onClose={() => setOpen(false)} title="Add warehouse">
+        <div className="space-y-3">
+          <Select
+            label="Branch *"
+            value={form.branch_id || ''}
+            onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+            options={[
+              { value: '', label: 'Select…' },
+              ...branches.map((b) => ({ value: b.id, label: b.name })),
+            ]}
+          />
+          <Input
+            label="Code *"
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value })}
+            placeholder="MAIN"
+          />
+          <Input
+            label="Name *"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Main cold storage"
+          />
+          <Input
+            label="Location"
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+          />
+          <Input
+            label="Manager"
+            value={form.manager_name}
+            onChange={(e) => setForm({ ...form, manager_name: e.target.value })}
+          />
+          <Input
+            label="Capacity"
+            value={form.capacity}
+            onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                !form.code.trim() ||
+                !form.name.trim() ||
+                !(form.branch_id || branch?.id) ||
+                createMutation.isPending
+              }
+              onClick={() => createMutation.mutate()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </AppModal>
+    </>
+  )
+}
+
+export function UnitsManagePage() {
+  const { restaurant } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [open, setOpen] = useState(false)
+  const [convOpen, setConvOpen] = useState(false)
+  const [form, setForm] = useState({ code: '', name: '', symbol: '' })
+  const [conv, setConv] = useState({ from_uom_id: '', to_uom_id: '', factor: '1000' })
+
+  const { data: units = [], isLoading } = useQuery({
+    queryKey: ['units', restaurant?.id],
+    queryFn: async () => asList(await listUnits(restaurant?.id ? { restaurant_id: restaurant.id } : {})),
+  })
+
+  const { data: conversions = [] } = useQuery({
+    queryKey: ['unit-conversions'],
+    queryFn: async () => asList(await listUnitConversions()),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createUnit({
+        restaurant_id: restaurant?.id || null,
+        code: form.code.trim().toUpperCase(),
+        name: form.name.trim(),
+        symbol: form.symbol || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units'] })
+      success('Unit created')
+      setOpen(false)
+      setForm({ code: '', name: '', symbol: '' })
+    },
+    onError: (err) => toastError(err?.message || 'Could not create unit'),
+  })
+
+  const convMutation = useMutation({
+    mutationFn: () =>
+      createUnitConversion({
+        from_uom_id: conv.from_uom_id,
+        to_uom_id: conv.to_uom_id,
+        factor: Number(conv.factor),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unit-conversions'] })
+      success('Conversion created')
+      setConvOpen(false)
+    },
+    onError: (err) => toastError(err?.message || 'Could not create conversion'),
+  })
+
+  const seedMutation = useMutation({
+    mutationFn: () => seedDefaultUnits(restaurant?.id ? { restaurant_id: restaurant.id } : {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units'] })
+      success('Default units seeded')
+    },
+    onError: (err) => toastError(err?.message || 'Seed failed'),
+  })
+
+  return (
+    <>
+      <EntityListPage
+        title="Units of measure"
+        description="Base units and conversion factors for recipes and procurement"
+        entity="units"
+        rows={units}
+        loading={isLoading}
+        headerActions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="ghost" onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending}>
+              Seed defaults
+            </Button>
+            <Button variant="ghost" onClick={() => setConvOpen(true)}>
+              Add conversion
+            </Button>
+            <AddEntityButton label="Add unit" onClick={() => setOpen(true)} />
+          </div>
+        }
+        columns={[
+          { key: 'code', label: 'Code', render: (v) => <CodeChip>{v}</CodeChip> },
+          { key: 'name', label: 'Name' },
+          { key: 'symbol', label: 'Symbol', render: (v) => v || '—' },
+          { key: 'is_active', label: 'Active', render: (v) => (v ? 'Yes' : 'No') },
+        ]}
+      />
+      <div className="mt-6">
+        <EntityListPage
+          title="Unit conversions"
+          description="1 from-unit = factor × to-unit"
+          entity="unit-conversions"
+          rows={conversions}
+          loading={false}
+          columns={[
+            { key: 'from_code', label: 'From' },
+            { key: 'to_code', label: 'To' },
+            { key: 'factor', label: 'Factor', render: (v) => formatNumber(v) },
+          ]}
+        />
+      </div>
+      <AppModal open={open} onClose={() => setOpen(false)} title="Add unit">
+        <div className="space-y-3">
+          <Input label="Code *" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <Input label="Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label="Symbol" value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!form.code.trim() || !form.name.trim() || createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </AppModal>
+      <AppModal open={convOpen} onClose={() => setConvOpen(false)} title="Add conversion">
+        <div className="space-y-3">
+          <Select
+            label="From unit *"
+            value={conv.from_uom_id}
+            onChange={(e) => setConv({ ...conv, from_uom_id: e.target.value })}
+            options={[
+              { value: '', label: 'Select…' },
+              ...units.map((u) => ({ value: u.id, label: `${u.code} — ${u.name}` })),
+            ]}
+          />
+          <Select
+            label="To unit *"
+            value={conv.to_uom_id}
+            onChange={(e) => setConv({ ...conv, to_uom_id: e.target.value })}
+            options={[
+              { value: '', label: 'Select…' },
+              ...units.map((u) => ({ value: u.id, label: `${u.code} — ${u.name}` })),
+            ]}
+          />
+          <Input
+            label="Factor *"
+            value={conv.factor}
+            onChange={(e) => setConv({ ...conv, factor: e.target.value })}
+          />
+          <p className="text-xs text-slate-500">e.g. 1 KG = 1000 G → factor 1000</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConvOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!conv.from_uom_id || !conv.to_uom_id || !conv.factor || convMutation.isPending}
+              onClick={() => convMutation.mutate()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      </AppModal>
     </>
   )
 }
