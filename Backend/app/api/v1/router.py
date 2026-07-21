@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.api.analytics_bi import router as analytics_bi_router
 from app.api.auth import router as auth_router
 from app.api.branches import router as branches_router
 from app.api.catalog import (
@@ -98,6 +99,7 @@ v1_router.include_router(orders_router)
 v1_router.include_router(pos_router)
 v1_router.include_router(notifications_router)
 v1_router.include_router(erp_dashboard_router)
+v1_router.include_router(analytics_bi_router)
 v1_router.include_router(latest_snapshots_router)
 v1_router.include_router(forecast_ml_router)
 v1_router.include_router(forecast_router)

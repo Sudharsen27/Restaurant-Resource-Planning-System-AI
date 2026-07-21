@@ -133,6 +133,7 @@ def executive_dashboard(
         )
 
     from app.services.catalog_service import CatalogService
+    from app.services.analytics_bi_service import AnalyticsBIService
 
     catalog = CatalogService(db).catalog_dashboard(restaurant_id)
     out_of_stock = catalog.get("out_of_stock", 0)
@@ -140,7 +141,29 @@ def executive_dashboard(
     supplier_count = catalog.get("supplier_count", 0)
     total_products = catalog.get("total_products", 0)
 
-    profit = (todays_revenue * Decimal("0.26")).quantize(Decimal("0.01"))
+    bi = AnalyticsBIService(db).executive_kpis(
+        restaurant_id=restaurant_id,
+        start=start,
+        end=now,
+    )
+    emp_bi = AnalyticsBIService(db).employee_analytics(
+        restaurant_id=restaurant_id,
+        start=start,
+        end=now,
+    )
+    profit = Decimal(str(bi.get("profit", 0)))
+    food_cost_pct = bi.get("food_cost_pct", 0.0)
+    labor_cost = bi.get("labor_cost", 0.0)
+    growth_pct = bi.get("growth_pct", 0.0)
+
+    def _delta_str(pct: float) -> str:
+        if pct > 0:
+            return f"+{pct:.1f}%"
+        if pct < 0:
+            return f"{pct:.1f}%"
+        return "—"
+
+    growth_label = _delta_str(growth_pct)
 
     return {
         "success": True,
@@ -152,8 +175,13 @@ def executive_dashboard(
                 "todaysCustomers": todays_customers,
                 "inventoryValue": float(inventory_value),
                 "foodWaste": 0.0,
-                "employeeAttendance": 0.0,
+                "employeeAttendance": emp_bi.get("attendance_pct", 0.0),
                 "profit": float(profit),
+                "foodCost": food_cost_pct,
+                "laborCost": labor_cost,
+                "profitMarginPct": round(
+                    float(profit / todays_revenue * 100) if todays_revenue > 0 else 0.0, 2
+                ),
                 "forecastAccuracy": round(forecast_accuracy, 1),
                 "lowStockItems": low_stock,
                 "outOfStockItems": out_of_stock,
@@ -162,16 +190,17 @@ def executive_dashboard(
                 "totalProducts": total_products,
                 "supplierCount": supplier_count,
                 "deltas": {
-                    "todaysRevenue": "—",
+                    "todaysRevenue": growth_label,
                     "todaysOrders": "—",
                     "todaysCustomers": "—",
                     "inventoryValue": "—",
                     "foodWaste": "—",
                     "employeeAttendance": "—",
-                    "profit": "—",
+                    "profit": growth_label,
                     "forecastAccuracy": "—",
                 },
             },
+            "biKpis": bi,
             "salesTrend": sales_trend,
             "ordersByHour": orders_by_hour,
             "topProducts": top_products,

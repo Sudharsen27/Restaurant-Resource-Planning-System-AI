@@ -1,4 +1,5 @@
 from app.models.accuracy_history import AccuracyHistory
+from app.models.analytics_bi import AnalyticsAlert, AnalyticsInsight
 from app.models.auth import (
     EmailVerificationToken,
     PasswordHistory,
@@ -142,4 +143,6 @@ __all__ = [
     "PasswordResetToken",
     "EmailVerificationToken",
     "PasswordHistory",
+    "AnalyticsInsight",
+    "AnalyticsAlert",
 ]
