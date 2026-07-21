@@ -103,6 +103,30 @@ const WarehousesPage = lazy(() =>
 const UnitsManagePage = lazy(() =>
   import('./pages/erp/CatalogPages').then((m) => ({ default: m.UnitsManagePage })),
 )
+const CrmDashboardPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.CrmDashboardPage })),
+)
+const LoyaltyPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.LoyaltyPage })),
+)
+const ReservationsPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.ReservationsPage })),
+)
+const HrmsDashboardPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.HrmsDashboardPage })),
+)
+const ShiftsPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.ShiftsPage })),
+)
+const AttendancePage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.AttendancePage })),
+)
+const LeavesPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.LeavesPage })),
+)
+const PayrollPage = lazy(() =>
+  import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.PayrollPage })),
+)
 
 function App() {
   return (
@@ -148,6 +172,14 @@ function App() {
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="employees" element={<EmployeesPage />} />
+              <Route path="crm" element={<CrmDashboardPage />} />
+              <Route path="loyalty" element={<LoyaltyPage />} />
+              <Route path="reservations" element={<ReservationsPage />} />
+              <Route path="hrms" element={<HrmsDashboardPage />} />
+              <Route path="shifts" element={<ShiftsPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
+              <Route path="leaves" element={<LeavesPage />} />
+              <Route path="payroll" element={<PayrollPage />} />
               <Route path="forecast" element={<Forecast />} />
               <Route path="staff" element={<StaffPlanner />} />
               <Route path="inventory" element={<InventoryPlanner />} />

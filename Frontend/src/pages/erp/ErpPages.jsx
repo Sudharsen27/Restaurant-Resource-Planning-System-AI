@@ -16,8 +16,9 @@ import { listBranches } from '../../services/branchService'
 import { listCategories, createCategory } from '../../services/categoryService'
 import { listProducts, createProduct, exportProductsCsv, importProductsCsv } from '../../services/productService'
 import { listSuppliers, createSupplier } from '../../services/supplierService'
-import { listCustomers } from '../../services/customerService'
-import { listEmployees } from '../../services/employeeService'
+import { listCustomers, createCustomer, updateCustomer } from '../../services/customerService'
+import { listEmployees, createEmployee } from '../../services/employeeService'
+import { fetchCustomerProfile } from '../../services/crmHrmsService'
 import { listOrders, updateOrder } from '../../services/orderService'
 import { listInventoryItems } from '../../services/inventoryItemService'
 import { adjustInventory } from '../../services/catalogService'
@@ -815,8 +816,36 @@ export function StockPage() {
   )
 }
 
+const MEMBERSHIP_OPTIONS = [
+  { value: 'BRONZE', label: 'Bronze' },
+  { value: 'SILVER', label: 'Silver' },
+  { value: 'GOLD', label: 'Gold' },
+  { value: 'PLATINUM', label: 'Platinum' },
+]
+
+const EMPTY_CUSTOMER_FORM = {
+  full_name: '',
+  email: '',
+  phone: '',
+  birthday: '',
+  address: '',
+  allergies: '',
+  notes: '',
+  is_vip: false,
+  membership_level: 'BRONZE',
+  loyalty_points: '0',
+}
+
 export function CustomersPage() {
   const { restaurant } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [formOpen, setFormOpen] = useState(false)
+  const [formMode, setFormMode] = useState('create')
+  const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState(EMPTY_CUSTOMER_FORM)
+  const [profileId, setProfileId] = useState(null)
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['customers', restaurant?.id],
     queryFn: async () => {
@@ -827,6 +856,75 @@ export function CustomersPage() {
     },
   })
 
+  const { data: profileRes, isLoading: profileLoading } = useQuery({
+    queryKey: ['customer-profile', profileId],
+    queryFn: async () => {
+      const res = await fetchCustomerProfile(profileId)
+      return res.data || res
+    },
+    enabled: Boolean(profileId),
+  })
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        restaurant_id: restaurant.id,
+        full_name: form.full_name.trim(),
+        email: form.email || null,
+        phone: form.phone || null,
+        birthday: form.birthday || null,
+        address: form.address || null,
+        allergies: form.allergies || null,
+        notes: form.notes || null,
+        is_vip: form.is_vip,
+        membership_level: form.membership_level,
+        loyalty_points: Number(form.loyalty_points) || 0,
+        is_active: true,
+      }
+      if (formMode === 'edit' && editing?.id) {
+        return updateCustomer(editing.id, payload)
+      }
+      return createCustomer(payload)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['crm-dashboard'] })
+      success(formMode === 'edit' ? 'Customer updated' : 'Customer created')
+      setFormOpen(false)
+      setEditing(null)
+      setForm(EMPTY_CUSTOMER_FORM)
+    },
+    onError: (err) => toastError(err?.message || 'Could not save customer'),
+  })
+
+  function openCreate() {
+    setFormMode('create')
+    setEditing(null)
+    setForm(EMPTY_CUSTOMER_FORM)
+    setFormOpen(true)
+  }
+
+  function openEdit(row) {
+    setFormMode('edit')
+    setEditing(row)
+    setForm({
+      full_name: row.full_name || row.name || '',
+      email: row.email || '',
+      phone: row.phone || '',
+      birthday: row.birthday || '',
+      address: row.address || '',
+      allergies: row.allergies || '',
+      notes: row.notes || '',
+      is_vip: Boolean(row.is_vip),
+      membership_level: row.membership_level || 'BRONZE',
+      loyalty_points: String(row.loyalty_points ?? 0),
+    })
+    setFormOpen(true)
+  }
+
+  const profile = profileRes?.customer ? profileRes : profileRes
+  const profileCustomer = profile?.customer || profile
+
   return (
     <>
       {isError && (
@@ -834,24 +932,158 @@ export function CustomersPage() {
       )}
       <EntityListPage
         title="Customers"
-        description="Guest profiles and lifetime value"
+        description="Guest profiles, VIP tags, and loyalty"
         entity="customers"
         rows={data || []}
         loading={isLoading}
+        headerActions={
+          <AddEntityButton label="Add customer" onClick={openCreate} disabled={!restaurant?.id} />
+        }
         columns={[
           { key: 'name', label: 'Customer' },
+          {
+            key: 'is_vip',
+            label: 'VIP',
+            render: (v) => (v ? <StatusBadge status="VIP" /> : '—'),
+          },
+          {
+            key: 'membership_level',
+            label: 'Tier',
+            render: (v) => (v ? <StatusBadge status={v} /> : '—'),
+          },
           { key: 'visits', label: 'Visits' },
           { key: 'spend', label: 'Spend', render: (v) => formatCurrency(Number(v)) },
-          { key: 'loyalty_points', label: 'Loyalty' },
-          { key: 'status', label: 'Status' },
+          { key: 'loyalty_points', label: 'Points' },
+          { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
+          {
+            key: 'actions',
+            label: '',
+            sortable: false,
+            render: (_v, row) => (
+              <div className="flex gap-1">
+                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setProfileId(row.id)}>
+                  Profile
+                </Button>
+                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => openEdit(row)}>
+                  Edit
+                </Button>
+              </div>
+            ),
+          },
         ]}
       />
+
+      <AppModal open={formOpen} title={formMode === 'edit' ? 'Edit customer' : 'New customer'} onClose={() => setFormOpen(false)} hideFooter size="lg">
+        <div className="space-y-4">
+          <Input label="Full name" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+            <Input label="Phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Birthday" type="date" value={form.birthday} onChange={(e) => setForm((f) => ({ ...f, birthday: e.target.value }))} />
+            <Select label="Membership" value={form.membership_level} onChange={(e) => setForm((f) => ({ ...f, membership_level: e.target.value }))} options={MEMBERSHIP_OPTIONS} />
+          </div>
+          <Input label="Loyalty points" type="number" min="0" value={form.loyalty_points} onChange={(e) => setForm((f) => ({ ...f, loyalty_points: e.target.value }))} />
+          <Input label="Address" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+          <Input label="Allergies" value={form.allergies} onChange={(e) => setForm((f) => ({ ...f, allergies: e.target.value }))} />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_vip} onChange={(e) => setForm((f) => ({ ...f, is_vip: e.target.checked }))} />
+            VIP customer
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button disabled={!form.full_name.trim() || saveMutation.isPending} onClick={() => saveMutation.mutate()}>Save</Button>
+          </div>
+        </div>
+      </AppModal>
+
+      <AppModal open={Boolean(profileId)} title="Customer profile" onClose={() => setProfileId(null)} hideFooter size="xl">
+        {profileLoading ? (
+          <p className="text-sm text-slate-500">Loading profile…</p>
+        ) : profileCustomer ? (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-slate-500">Name</p>
+                <p className="font-medium">{profileCustomer.full_name || profileCustomer.name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Tier / VIP</p>
+                <p className="font-medium">
+                  {profileCustomer.membership_level || '—'}
+                  {profileCustomer.is_vip ? ' · VIP' : ''}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Points</p>
+                <p className="font-medium">{profileCustomer.loyalty_points ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Lifetime spend</p>
+                <p className="font-medium">{formatCurrency(Number(profileCustomer.spend ?? 0))}</p>
+              </div>
+            </div>
+            {profile?.order_timeline?.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold">Recent orders</p>
+                <ul className="divide-y divide-slate-100 dark:divide-zinc-800 rounded-lg border border-slate-200 dark:border-zinc-800">
+                  {profile.order_timeline.slice(0, 5).map((o) => (
+                    <li key={o.order_id} className="flex justify-between px-3 py-2 text-sm">
+                      <span>{o.order_number}</span>
+                      <span>{formatCurrency(Number(o.total))}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex justify-end">
+              <Link to="/loyalty" className="text-sm text-emerald-600 hover:underline" onClick={() => setProfileId(null)}>
+                View loyalty program →
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Profile not available.</p>
+        )}
+      </AppModal>
     </>
   )
 }
 
+const EMPLOYEE_ROLES = [
+  { value: 'CHEF', label: 'Chef' },
+  { value: 'WAITER', label: 'Waiter' },
+  { value: 'CASHIER', label: 'Cashier' },
+  { value: 'MANAGER', label: 'Manager' },
+  { value: 'SUPERVISOR', label: 'Supervisor' },
+  { value: 'HR', label: 'HR' },
+  { value: 'ACCOUNTANT', label: 'Accountant' },
+]
+
+const EMPLOYMENT_TYPES = [
+  { value: 'FULL_TIME', label: 'Full time' },
+  { value: 'PART_TIME', label: 'Part time' },
+  { value: 'CONTRACT', label: 'Contract' },
+]
+
 export function EmployeesPage() {
-  const { restaurant } = useOrg()
+  const { restaurant, branch, branches } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    branch_id: '',
+    employee_code: '',
+    full_name: '',
+    role: 'WAITER',
+    designation: '',
+    monthly_salary: '',
+    employment_type: 'FULL_TIME',
+    email: '',
+    phone: '',
+  })
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['employees', restaurant?.id],
     queryFn: async () => {
@@ -862,6 +1094,42 @@ export function EmployeesPage() {
     },
   })
 
+  const branchOptions = (branches || []).map((b) => ({ value: b.id, label: b.name }))
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createEmployee({
+        branch_id: form.branch_id || branch?.id,
+        employee_code: form.employee_code.trim(),
+        full_name: form.full_name.trim(),
+        role: form.role,
+        designation: form.designation || null,
+        monthly_salary: Number(form.monthly_salary) || 0,
+        employment_type: form.employment_type,
+        email: form.email || null,
+        phone: form.phone || null,
+        is_active: true,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] })
+      queryClient.invalidateQueries({ queryKey: ['hrms-dashboard'] })
+      success('Employee created')
+      setOpen(false)
+      setForm({
+        branch_id: '',
+        employee_code: '',
+        full_name: '',
+        role: 'WAITER',
+        designation: '',
+        monthly_salary: '',
+        employment_type: 'FULL_TIME',
+        email: '',
+        phone: '',
+      })
+    },
+    onError: (err) => toastError(err?.message || 'Could not create employee'),
+  })
+
   return (
     <>
       {isError && (
@@ -869,17 +1137,65 @@ export function EmployeesPage() {
       )}
       <EntityListPage
         title="Employees"
-        description="Workforce directory"
+        description="Workforce directory — designation, salary, employment type"
         entity="employees"
         rows={data || []}
         loading={isLoading}
+        headerActions={
+          <AddEntityButton label="Add employee" onClick={() => setOpen(true)} disabled={!branch?.id && !branches?.length} />
+        }
         columns={[
           { key: 'name', label: 'Name' },
-          { key: 'role', label: 'Role' },
+          { key: 'role', label: 'Role', render: (v) => <StatusBadge status={v} /> },
+          { key: 'designation', label: 'Designation' },
+          {
+            key: 'monthly_salary',
+            label: 'Salary',
+            render: (v) => formatCurrency(Number(v ?? 0)),
+          },
+          {
+            key: 'employment_type',
+            label: 'Type',
+            render: (v) => <StatusBadge status={v} />,
+          },
           { key: 'branch', label: 'Branch' },
-          { key: 'status', label: 'Status' },
+          { key: 'status', label: 'Status', render: (v) => <StatusBadge status={v} /> },
         ]}
       />
+
+      <AppModal open={open} title="New employee" onClose={() => setOpen(false)} hideFooter size="lg">
+        <div className="space-y-4">
+          <Select
+            label="Branch"
+            value={form.branch_id || branch?.id || ''}
+            onChange={(e) => setForm((f) => ({ ...f, branch_id: e.target.value }))}
+            options={[{ value: '', label: 'Select branch' }, ...branchOptions]}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Employee code" value={form.employee_code} onChange={(e) => setForm((f) => ({ ...f, employee_code: e.target.value }))} />
+            <Input label="Full name" value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select label="Role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} options={EMPLOYEE_ROLES} />
+            <Select label="Employment type" value={form.employment_type} onChange={(e) => setForm((f) => ({ ...f, employment_type: e.target.value }))} options={EMPLOYMENT_TYPES} />
+          </div>
+          <Input label="Designation" value={form.designation} onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))} />
+          <Input label="Monthly salary (₹)" type="number" min="0" value={form.monthly_salary} onChange={(e) => setForm((f) => ({ ...f, monthly_salary: e.target.value }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+            <Input label="Phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!form.full_name.trim() || !form.employee_code.trim() || createMutation.isPending}
+              onClick={() => createMutation.mutate()}
+            >
+              Create
+            </Button>
+          </div>
+        </div>
+      </AppModal>
     </>
   )
 }
