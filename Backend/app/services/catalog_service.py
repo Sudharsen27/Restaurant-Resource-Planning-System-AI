@@ -23,6 +23,7 @@ from app.models.enterprise import (
     Product,
     PurchaseItem,
     PurchaseOrder,
+    PurchaseOrderApproval,
     Recipe,
     RecipeIngredient,
     StockTransfer,
@@ -63,6 +64,7 @@ from app.services.audit_service import write_audit
 from app.services.inventory_ledger import (
     apply_stock_change,
     assert_product_orderable,
+    get_or_create_inventory_item,
     product_has_transactions,
 )
 
@@ -127,6 +129,26 @@ class CatalogService:
         self.db.add(row)
         self.db.commit()
         return {"id": str(row.id), "factor": float(row.factor)}
+
+    def list_conversions(self) -> list[dict]:
+        rows = self.db.scalars(
+            select(UnitConversion).where(UnitConversion.is_deleted.is_(False))
+        ).all()
+        out = []
+        for row in rows:
+            frm = self.db.get(UnitOfMeasure, row.from_uom_id)
+            to = self.db.get(UnitOfMeasure, row.to_uom_id)
+            out.append(
+                {
+                    "id": str(row.id),
+                    "from_uom_id": str(row.from_uom_id),
+                    "from_code": frm.code if frm else None,
+                    "to_uom_id": str(row.to_uom_id),
+                    "to_code": to.code if to else None,
+                    "factor": float(row.factor),
+                }
+            )
+        return out
 
     def seed_default_units(self, restaurant_id: UUID | None = None, *, actor_id: int | None = None) -> int:
         defaults = [
@@ -402,22 +424,42 @@ class CatalogService:
                 PurchaseOrderStatus.DRAFT,
             },
             PurchaseOrderStatus.APPROVED: {PurchaseOrderStatus.ORDERED, PurchaseOrderStatus.CANCELLED},
-            PurchaseOrderStatus.ORDERED: {PurchaseOrderStatus.CANCELLED},
+            PurchaseOrderStatus.ORDERED: {
+                PurchaseOrderStatus.PARTIAL_RECEIVED,
+                PurchaseOrderStatus.RECEIVED,
+                PurchaseOrderStatus.CANCELLED,
+            },
+            PurchaseOrderStatus.PARTIAL_RECEIVED: {
+                PurchaseOrderStatus.RECEIVED,
+                PurchaseOrderStatus.CANCELLED,
+            },
             PurchaseOrderStatus.RECEIVED: set(),
             PurchaseOrderStatus.CANCELLED: set(),
         }
         if target not in allowed.get(po.status, set()):
             raise ValidationError(f"Cannot move PO from {po.status.value} to {target.value}")
 
+        from_status = po.status.value
         po.status = target
         po.updated_by = actor_id
+        self.db.add(
+            PurchaseOrderApproval(
+                purchase_order_id=po.id,
+                from_status=from_status,
+                to_status=target.value,
+                comment=None,
+                actor_user_id=actor_id,
+                created_by=actor_id,
+                updated_by=actor_id,
+            )
+        )
         write_audit(
             self.db,
             action=AuditAction.UPDATE,
             actor_user_id=actor_id,
             entity_type="PurchaseOrder",
             entity_id=str(po.id),
-            details={"status": target.value, "po_number": po.po_number},
+            details={"status": target.value, "from_status": from_status, "po_number": po.po_number},
         )
         self.db.commit()
         return self.get_purchase_order(po_id)
@@ -484,9 +526,10 @@ class CatalogService:
         if po.status not in (
             PurchaseOrderStatus.APPROVED,
             PurchaseOrderStatus.ORDERED,
+            PurchaseOrderStatus.PARTIAL_RECEIVED,
             PurchaseOrderStatus.RECEIVED,
         ):
-            raise ValidationError("PO must be APPROVED or ORDERED before receiving goods")
+            raise ValidationError("PO must be APPROVED, ORDERED, or PARTIAL_RECEIVED before receiving goods")
 
         branch_id = payload.branch_id or po.branch_id
         grn = GoodsReceipt(
@@ -541,20 +584,48 @@ class CatalogService:
                 if line.expiry_date:
                     item.expiry_date = line.expiry_date
 
+            if line.damaged_quantity and line.damaged_quantity > 0:
+                dmg_item = get_or_create_inventory_item(
+                    self.db, branch_id=branch_id, product_id=line.product_id, actor_id=actor_id
+                )
+                dmg_item.damaged_quantity = (dmg_item.damaged_quantity or Decimal("0")) + line.damaged_quantity
+                dmg_item.updated_by = actor_id
+                self.db.add(
+                    InventoryTransaction(
+                        inventory_item_id=dmg_item.id,
+                        transaction_type=InventoryTransactionType.DAMAGE,
+                        quantity=line.damaged_quantity,
+                        unit_cost=line.unit_cost,
+                        reference=grn.grn_number,
+                        notes="Damaged on GRN — held in damaged stock bucket",
+                        branch_id=branch_id,
+                        product_id=line.product_id,
+                        created_by=actor_id,
+                        updated_by=actor_id,
+                    )
+                )
+
             if line.purchase_item_id:
                 pi = self.db.get(PurchaseItem, line.purchase_item_id)
                 if pi:
                     pi.received_quantity = (pi.received_quantity or Decimal("0")) + accepted
                     pi.updated_by = actor_id
 
-        # Mark PO received when all lines fully received
+        # Mark PO partial / fully received
         all_received = all(
             (i.received_quantity or Decimal("0")) >= i.quantity
             for i in po.items
             if not i.is_deleted
         )
+        any_received = any(
+            (i.received_quantity or Decimal("0")) > 0
+            for i in po.items
+            if not i.is_deleted
+        )
         if all_received:
             po.status = PurchaseOrderStatus.RECEIVED
+        elif any_received:
+            po.status = PurchaseOrderStatus.PARTIAL_RECEIVED
         elif po.status == PurchaseOrderStatus.APPROVED:
             po.status = PurchaseOrderStatus.ORDERED
         po.updated_by = actor_id
@@ -595,6 +666,13 @@ class CatalogService:
     def _recipe_out(self, recipe: Recipe) -> RecipeOut:
         food_cost, portion_cost = self._recipe_cost(recipe)
         menu = recipe.menu_item
+        selling = _dec(menu.price) if menu else None
+        margin_amount = None
+        margin_percent = None
+        if selling is not None:
+            margin_amount = (selling - portion_cost).quantize(Decimal("0.01"))
+            if selling > 0:
+                margin_percent = round(float(margin_amount / selling * 100), 2)
         return RecipeOut(
             id=recipe.id,
             restaurant_id=recipe.restaurant_id,
@@ -622,6 +700,9 @@ class CatalogService:
             ],
             food_cost=food_cost,
             portion_cost=portion_cost,
+            selling_price=selling,
+            margin_amount=margin_amount,
+            margin_percent=margin_percent,
             created_at=recipe.created_at,
         )
 
@@ -988,21 +1069,34 @@ class CatalogService:
                         "message": f"{name} is out of stock",
                     }
                 )
-            elif available <= item.reorder_level or (
-                item.min_stock > 0 and available <= item.min_stock
-            ):
+            if available < 0:
                 alerts.append(
                     {
-                        "type": "LOW_STOCK",
-                        "severity": "warning",
+                        "type": "NEGATIVE",
+                        "severity": "critical",
                         "product": name,
                         "product_id": str(item.product_id),
                         "branch": branch.name if branch else None,
                         "quantity": float(available),
-                        "reorder_level": float(item.reorder_level),
-                        "message": f"{name} is below reorder level",
+                        "message": f"{name} has negative available stock",
                     }
                 )
+            elif available <= item.reorder_level or (
+                item.min_stock > 0 and available <= item.min_stock
+            ):
+                if item.quantity_on_hand > 0:
+                    alerts.append(
+                        {
+                            "type": "LOW_STOCK",
+                            "severity": "warning",
+                            "product": name,
+                            "product_id": str(item.product_id),
+                            "branch": branch.name if branch else None,
+                            "quantity": float(available),
+                            "reorder_level": float(item.reorder_level),
+                            "message": f"{name} is below reorder level",
+                        }
+                    )
             if item.expiry_date:
                 if item.expiry_date < today:
                     alerts.append(

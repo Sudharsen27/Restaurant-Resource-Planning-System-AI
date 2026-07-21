@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class SupplierCreate(BaseModel):
     restaurant_id: UUID
     name: str = Field(min_length=2, max_length=255)
+    company_name: str | None = Field(default=None, max_length=255)
     contact_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=32)
@@ -19,7 +20,9 @@ class SupplierCreate(BaseModel):
     category: str | None = Field(default=None, max_length=100)
     lead_days: int = Field(default=1, ge=0, le=365)
     gst_number: str | None = Field(default=None, max_length=32)
+    pan_number: str | None = Field(default=None, max_length=20)
     payment_terms: str | None = Field(default=None, max_length=120)
+    credit_days: int = Field(default=0, ge=0, le=365)
     credit_limit: Decimal = Field(default=Decimal("0"), ge=0)
     outstanding_balance: Decimal = Field(default=Decimal("0"), ge=0)
     is_active: bool = True
@@ -28,6 +31,7 @@ class SupplierCreate(BaseModel):
 class SupplierUpdate(BaseModel):
     restaurant_id: UUID | None = None
     name: str | None = Field(default=None, min_length=2, max_length=255)
+    company_name: str | None = Field(default=None, max_length=255)
     contact_name: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=32)
@@ -35,7 +39,9 @@ class SupplierUpdate(BaseModel):
     category: str | None = Field(default=None, max_length=100)
     lead_days: int | None = Field(default=None, ge=0, le=365)
     gst_number: str | None = Field(default=None, max_length=32)
+    pan_number: str | None = Field(default=None, max_length=20)
     payment_terms: str | None = Field(default=None, max_length=120)
+    credit_days: int | None = Field(default=None, ge=0, le=365)
     credit_limit: Decimal | None = Field(default=None, ge=0)
     outstanding_balance: Decimal | None = Field(default=None, ge=0)
     is_active: bool | None = None
@@ -47,6 +53,7 @@ class SupplierOut(BaseModel):
     id: UUID
     restaurant_id: UUID
     name: str
+    company_name: str | None = None
     contact_name: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -55,7 +62,9 @@ class SupplierOut(BaseModel):
     lead_days: int
     leadDays: int
     gst_number: str | None = None
+    pan_number: str | None = None
     payment_terms: str | None = None
+    credit_days: int = 0
     credit_limit: Decimal = Decimal("0")
     outstanding_balance: Decimal = Decimal("0")
     is_active: bool

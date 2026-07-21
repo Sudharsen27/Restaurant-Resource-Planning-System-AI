@@ -166,6 +166,9 @@ class RecipeOut(BaseModel):
     ingredients: list[dict] = []
     food_cost: Decimal
     portion_cost: Decimal
+    selling_price: Decimal | None = None
+    margin_amount: Decimal | None = None
+    margin_percent: float | None = None
     created_at: datetime
 
 

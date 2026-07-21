@@ -67,6 +67,15 @@ def create_unit(
     return _ok("Unit created", data.model_dump(mode="json"))
 
 
+@units_router.get("/conversions")
+def list_conversions(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> dict:
+    data = CatalogService(db).list_conversions()
+    return _ok("Conversions fetched", data)
+
+
 @units_router.post("/conversions")
 def create_conversion(
     payload: UnitConversionCreate,

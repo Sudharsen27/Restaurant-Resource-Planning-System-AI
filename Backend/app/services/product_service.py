@@ -171,3 +171,120 @@ class ProductService:
             details={"sku": row.sku},
             commit=True,
         )
+
+    def export_csv(
+        self,
+        *,
+        restaurant_id: UUID | None = None,
+        skip: int = 0,
+        limit: int = 5000,
+    ) -> str:
+        import csv
+        import io
+
+        rows = self.repo.list_filtered(
+            restaurant_id=restaurant_id, skip=skip, limit=limit, active_only=False
+        )
+        buf = io.StringIO()
+        writer = csv.DictWriter(
+            buf,
+            fieldnames=[
+                "sku",
+                "name",
+                "barcode",
+                "brand",
+                "unit",
+                "unit_cost",
+                "unit_price",
+                "tax_rate",
+                "hsn_code",
+                "lifecycle_status",
+                "category",
+                "supplier",
+            ],
+        )
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(
+                {
+                    "sku": r.sku,
+                    "name": r.name,
+                    "barcode": r.barcode or "",
+                    "brand": r.brand or "",
+                    "unit": r.unit,
+                    "unit_cost": str(r.unit_cost),
+                    "unit_price": str(r.unit_price),
+                    "tax_rate": str(getattr(r, "tax_rate", 0) or 0),
+                    "hsn_code": r.hsn_code or "",
+                    "lifecycle_status": (
+                        r.lifecycle_status.value
+                        if hasattr(r.lifecycle_status, "value")
+                        else str(r.lifecycle_status)
+                    ),
+                    "category": r.category.name if r.category else "",
+                    "supplier": r.supplier.name if r.supplier else "",
+                }
+            )
+        return buf.getvalue()
+
+    def import_csv(
+        self,
+        *,
+        restaurant_id: UUID,
+        csv_text: str,
+        actor_id: int | None = None,
+    ) -> dict:
+        import csv
+        import io
+        from decimal import Decimal, InvalidOperation
+
+        if self.restaurants.get_by_id(restaurant_id) is None:
+            raise NotFoundError("Restaurant", str(restaurant_id))
+
+        reader = csv.DictReader(io.StringIO(csv_text))
+        created = 0
+        updated = 0
+        errors: list[str] = []
+        for idx, row in enumerate(reader, start=2):
+            try:
+                sku = (row.get("sku") or "").strip().upper()
+                name = (row.get("name") or "").strip()
+                if not sku or not name:
+                    errors.append(f"Row {idx}: sku and name are required")
+                    continue
+                unit_cost = Decimal(str(row.get("unit_cost") or "0"))
+                unit_price = Decimal(str(row.get("unit_price") or "0"))
+                tax_rate = Decimal(str(row.get("tax_rate") or "0"))
+                existing = self.repo.get_by_sku(restaurant_id, sku)
+                if existing:
+                    existing.name = name
+                    existing.barcode = (row.get("barcode") or None) or existing.barcode
+                    existing.brand = (row.get("brand") or None) or existing.brand
+                    existing.unit = (row.get("unit") or existing.unit or "pcs").strip()
+                    existing.unit_cost = unit_cost
+                    existing.unit_price = unit_price
+                    existing.tax_rate = tax_rate
+                    existing.hsn_code = (row.get("hsn_code") or None) or existing.hsn_code
+                    existing.updated_by = actor_id
+                    self.repo.save(existing)
+                    updated += 1
+                else:
+                    payload = ProductCreate(
+                        restaurant_id=restaurant_id,
+                        name=name,
+                        sku=sku,
+                        barcode=(row.get("barcode") or None) or None,
+                        brand=(row.get("brand") or None) or None,
+                        unit=(row.get("unit") or "pcs").strip(),
+                        unit_cost=unit_cost,
+                        unit_price=unit_price,
+                        tax_rate=tax_rate,
+                        hsn_code=(row.get("hsn_code") or None) or None,
+                    )
+                    self.create_product(payload, actor_id=actor_id)
+                    created += 1
+            except (ValidationError, ConflictError, InvalidOperation, ValueError) as exc:
+                errors.append(f"Row {idx}: {exc}")
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"Row {idx}: {exc}")
+        return {"created": created, "updated": updated, "errors": errors}

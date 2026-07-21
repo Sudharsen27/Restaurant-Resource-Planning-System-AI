@@ -45,6 +45,7 @@ from app.api.restaurants import router as restaurants_router
 from app.api.root import router as root_router
 from app.api.staff import router as staff_router
 from app.api.suppliers import router as suppliers_router
+from app.api.warehouses import router as warehouses_router
 
 v1_router = APIRouter()
 v1_router.include_router(root_router)
@@ -61,6 +62,7 @@ v1_router.include_router(ops_router)
 v1_router.include_router(categories_router)
 v1_router.include_router(products_router)
 v1_router.include_router(suppliers_router)
+v1_router.include_router(warehouses_router)
 v1_router.include_router(units_router)
 v1_router.include_router(po_router)
 v1_router.include_router(grn_router)

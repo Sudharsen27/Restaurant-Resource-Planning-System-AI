@@ -33,8 +33,10 @@ class InventoryTransactionType(str, enum.Enum):
     SALE = "SALE"
     ADJUSTMENT = "ADJUSTMENT"
     WASTE = "WASTE"
+    DAMAGE = "DAMAGE"
     TRANSFER = "TRANSFER"
     RETURN = "RETURN"
+    PRODUCTION = "PRODUCTION"
     OPENING = "OPENING"
     CLOSING = "CLOSING"
 
@@ -70,6 +72,7 @@ class PurchaseOrderStatus(str, enum.Enum):
     SUBMITTED = "SUBMITTED"
     APPROVED = "APPROVED"
     ORDERED = "ORDERED"
+    PARTIAL_RECEIVED = "PARTIAL_RECEIVED"
     RECEIVED = "RECEIVED"
     CANCELLED = "CANCELLED"
 

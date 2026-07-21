@@ -396,8 +396,11 @@ class Supplier(UUIDBaseModel):
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     lead_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gst_number: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    pan_number: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     payment_terms: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    credit_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     credit_limit: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     outstanding_balance: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False, server_default="0"
@@ -585,6 +588,7 @@ class MenuItem(UUIDBaseModel):
     prep_time_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="15")
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     nutrition_info: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    calories: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_combo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 
     product: Mapped["Product | None"] = relationship("Product", back_populates="menu_items", lazy="joined")
@@ -660,6 +664,56 @@ class RecipeIngredient(UUIDBaseModel):
     product: Mapped["Product"] = relationship("Product", lazy="joined")
 
 
+class Warehouse(UUIDBaseModel):
+    __tablename__ = "warehouses"
+    __table_args__ = (
+        UniqueConstraint("restaurant_id", "code", name="uq_warehouses_restaurant_code"),
+        CheckConstraint("capacity >= 0", name="ck_warehouses_capacity"),
+    )
+
+    restaurant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    code: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    manager_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    capacity: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
+
+
+class ProductBranchAvailability(UUIDBaseModel):
+    __tablename__ = "product_branch_availability"
+    __table_args__ = (
+        UniqueConstraint("product_id", "branch_id", name="uq_product_branch_availability"),
+    )
+
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    is_available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+
+
+class MenuItemBranchAvailability(UUIDBaseModel):
+    __tablename__ = "menu_item_branch_availability"
+    __table_args__ = (
+        UniqueConstraint("menu_item_id", "branch_id", name="uq_menu_item_branch_availability"),
+    )
+
+    menu_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("menu_items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    branch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    is_available: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+
+
 class InventoryItem(UUIDBaseModel):
     __tablename__ = "inventory_items"
     __table_args__ = (
@@ -685,11 +739,19 @@ class InventoryItem(UUIDBaseModel):
     )
     quantity_on_hand: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
     reserved_quantity: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
+    damaged_quantity: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
     reorder_level: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
     min_stock: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
     max_stock: Mapped[Decimal] = mapped_column(Numeric(14, 3), nullable=False, server_default="0")
     batch_number: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    manufacturing_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    warehouse_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("warehouses.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     warehouse_code: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     status: Mapped[InventoryStatus] = mapped_column(
         Enum(InventoryStatus, name="inventorystatus"),
@@ -921,6 +983,30 @@ class PurchaseOrder(UUIDBaseModel):
     )
     goods_receipts: Mapped[list["GoodsReceipt"]] = relationship(
         "GoodsReceipt", back_populates="purchase_order", lazy="selectin"
+    )
+    approvals: Mapped[list["PurchaseOrderApproval"]] = relationship(
+        "PurchaseOrderApproval",
+        back_populates="purchase_order",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class PurchaseOrderApproval(UUIDBaseModel):
+    __tablename__ = "purchase_order_approvals"
+
+    purchase_order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("purchase_orders.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    from_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    to_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    actor_user_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    purchase_order: Mapped["PurchaseOrder"] = relationship(
+        "PurchaseOrder", back_populates="approvals", lazy="joined"
     )
 
 
