@@ -127,6 +127,24 @@ const LeavesPage = lazy(() =>
 const PayrollPage = lazy(() =>
   import('./pages/erp/CrmHrmsPages').then((m) => ({ default: m.PayrollPage })),
 )
+const ExecutiveDashboardPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.ExecutiveDashboardPage })),
+)
+const AnalyticsCenterPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.AnalyticsCenterPage })),
+)
+const ForecastDashboardPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.ForecastDashboardPage })),
+)
+const InsightsAlertsPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.InsightsAlertsPage })),
+)
+const ReportsCenterPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.ReportsCenterPage })),
+)
+const AiAssistantPage = lazy(() =>
+  import('./pages/bi/BiPages').then((m) => ({ default: m.AiAssistantPage })),
+)
 
 function App() {
   return (
@@ -180,6 +198,12 @@ function App() {
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="leaves" element={<LeavesPage />} />
               <Route path="payroll" element={<PayrollPage />} />
+              <Route path="executive" element={<ExecutiveDashboardPage />} />
+              <Route path="analytics-center" element={<AnalyticsCenterPage />} />
+              <Route path="forecast-bi" element={<ForecastDashboardPage />} />
+              <Route path="insights" element={<InsightsAlertsPage />} />
+              <Route path="reports-center" element={<ReportsCenterPage />} />
+              <Route path="ai-assistant" element={<AiAssistantPage />} />
               <Route path="forecast" element={<Forecast />} />
               <Route path="staff" element={<StaffPlanner />} />
               <Route path="inventory" element={<InventoryPlanner />} />
