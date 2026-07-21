@@ -47,6 +47,7 @@ class RestaurantTableCreate(BaseModel):
     capacity: int = Field(default=2, ge=1, le=50)
     status: TableStatus = TableStatus.AVAILABLE
     qr_code: str | None = Field(default=None, max_length=255)
+    assigned_waiter: str | None = Field(default=None, max_length=120)
     is_active: bool = True
 
 
@@ -56,6 +57,7 @@ class RestaurantTableUpdate(BaseModel):
     capacity: int | None = Field(default=None, ge=1, le=50)
     status: TableStatus | None = None
     qr_code: str | None = Field(default=None, max_length=255)
+    assigned_waiter: str | None = Field(default=None, max_length=120)
     is_active: bool | None = None
 
 
@@ -69,10 +71,23 @@ class RestaurantTableOut(BaseModel):
     capacity: int
     status: TableStatus
     qr_code: str | None = None
+    assigned_waiter: str | None = None
+    pos_x: int = 0
+    pos_y: int = 0
+    merged_into_id: UUID | None = None
     is_active: bool
     dining_area_name: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class TableMergeIn(BaseModel):
+    primary_table_id: UUID
+    secondary_table_ids: list[UUID] = Field(min_length=1)
+
+
+class TableSplitIn(BaseModel):
+    primary_table_id: UUID
 
 
 class DepartmentCreate(BaseModel):

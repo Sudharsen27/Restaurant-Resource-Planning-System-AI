@@ -30,7 +30,7 @@ from app.api.inventory_items import router as inventory_items_router
 from app.api.latest_snapshots import router as latest_snapshots_router
 from app.api.model_learning import router as model_learning_router
 from app.api.notifications import router as notifications_router
-from app.api.orders import router as orders_router
+from app.api.orders import pos_router, router as orders_router
 from app.api.operations import (
     departments_router,
     dining_router,
@@ -77,6 +77,7 @@ v1_router.include_router(customers_router)
 v1_router.include_router(employees_router)
 v1_router.include_router(inventory_items_router)
 v1_router.include_router(orders_router)
+v1_router.include_router(pos_router)
 v1_router.include_router(notifications_router)
 v1_router.include_router(erp_dashboard_router)
 v1_router.include_router(latest_snapshots_router)

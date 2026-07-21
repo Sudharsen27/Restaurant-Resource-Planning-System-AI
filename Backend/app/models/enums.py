@@ -51,6 +51,21 @@ class OrderStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
+class OrderType(str, enum.Enum):
+    DINE_IN = "DINE_IN"
+    TAKEAWAY = "TAKEAWAY"
+    DELIVERY = "DELIVERY"
+    ONLINE = "ONLINE"
+
+
+class KitchenItemStatus(str, enum.Enum):
+    QUEUED = "QUEUED"
+    PREPARING = "PREPARING"
+    READY = "READY"
+    SERVED = "SERVED"
+    CANCELLED = "CANCELLED"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "PENDING"
     PAID = "PAID"

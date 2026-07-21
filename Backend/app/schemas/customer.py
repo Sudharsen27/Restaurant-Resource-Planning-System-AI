@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -18,6 +19,9 @@ class CustomerCreate(BaseModel):
     visit_count: int = Field(default=0, ge=0)
     lifetime_spend: Decimal = Field(default=Decimal("0"), ge=0)
     last_visit_at: datetime | None = None
+    loyalty_points: int = Field(default=0, ge=0)
+    birthday: date | None = None
+    preferences: dict[str, Any] | list[Any] | None = None
     is_active: bool = True
 
 
@@ -30,6 +34,9 @@ class CustomerUpdate(BaseModel):
     visit_count: int | None = Field(default=None, ge=0)
     lifetime_spend: Decimal | None = Field(default=None, ge=0)
     last_visit_at: datetime | None = None
+    loyalty_points: int | None = Field(default=None, ge=0)
+    birthday: date | None = None
+    preferences: dict[str, Any] | list[Any] | None = None
     is_active: bool | None = None
 
 
@@ -45,6 +52,9 @@ class CustomerOut(BaseModel):
     visits: int
     spend: Decimal
     lastVisit: datetime | None = None
+    loyalty_points: int = 0
+    birthday: date | None = None
+    preferences: Any = None
     status: str
     is_active: bool
     created_at: datetime

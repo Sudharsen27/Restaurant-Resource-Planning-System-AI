@@ -31,8 +31,10 @@ from app.models.enums import (
     EmployeeRole,
     InventoryStatus,
     InventoryTransactionType,
+    KitchenItemStatus,
     NotificationType,
     OrderStatus,
+    OrderType,
     PaymentMethod,
     PaymentStatus,
     ProductLifecycleStatus,
@@ -203,6 +205,15 @@ class RestaurantTable(UUIDBaseModel):
         server_default=TableStatus.AVAILABLE.value,
     )
     qr_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    pos_x: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    pos_y: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    assigned_waiter: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("restaurant_tables.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     dining_area: Mapped["DiningArea"] = relationship("DiningArea", back_populates="tables", lazy="joined")
 
@@ -374,6 +385,9 @@ class Customer(UUIDBaseModel):
     visit_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     lifetime_spend: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     last_visit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    loyalty_points: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
+    preferences: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
 
 class Supplier(UUIDBaseModel):
@@ -799,6 +813,8 @@ class Order(UUIDBaseModel):
         CheckConstraint("subtotal >= 0", name="ck_orders_subtotal"),
         CheckConstraint("tax >= 0", name="ck_orders_tax"),
         CheckConstraint("total >= 0", name="ck_orders_total"),
+        CheckConstraint("discount_amount >= 0", name="ck_orders_discount"),
+        CheckConstraint("tip_amount >= 0", name="ck_orders_tip"),
     )
 
     branch_id: Mapped[uuid.UUID] = mapped_column(
@@ -813,7 +829,20 @@ class Order(UUIDBaseModel):
         nullable=True,
         index=True,
     )
+    table_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("restaurant_tables.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     order_number: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    invoice_number: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    order_type: Mapped[OrderType] = mapped_column(
+        Enum(OrderType, name="ordertype"),
+        nullable=False,
+        server_default=OrderType.DINE_IN.value,
+        index=True,
+    )
     status: Mapped[OrderStatus] = mapped_column(
         Enum(OrderStatus, name="orderstatus"),
         nullable=False,
@@ -821,10 +850,14 @@ class Order(UUIDBaseModel):
         index=True,
     )
     order_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    guest_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
+    discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     tax: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
+    tip_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    stock_deducted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
 
     items: Mapped[list["OrderItem"]] = relationship(
         "OrderItem",
@@ -846,6 +879,8 @@ class OrderItem(UUIDBaseModel):
         CheckConstraint("quantity > 0", name="ck_order_items_qty"),
         CheckConstraint("unit_price >= 0", name="ck_order_items_price"),
         CheckConstraint("line_total >= 0", name="ck_order_items_total"),
+        CheckConstraint("discount_amount >= 0", name="ck_order_items_discount"),
+        CheckConstraint("tax_amount >= 0", name="ck_order_items_tax"),
     )
 
     order_id: Mapped[uuid.UUID] = mapped_column(
@@ -863,7 +898,17 @@ class OrderItem(UUIDBaseModel):
     item_name: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
+    tax_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     line_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    modifiers: Mapped[dict | list | None] = mapped_column(JSONB, nullable=True)
+    kitchen_status: Mapped[KitchenItemStatus] = mapped_column(
+        Enum(KitchenItemStatus, name="kitchenitemstatus"),
+        nullable=False,
+        server_default=KitchenItemStatus.QUEUED.value,
+        index=True,
+    )
 
     order: Mapped["Order"] = relationship("Order", back_populates="items", lazy="joined")
 
@@ -872,6 +917,7 @@ class Payment(UUIDBaseModel):
     __tablename__ = "payments"
     __table_args__ = (
         CheckConstraint("amount >= 0", name="ck_payments_amount"),
+        CheckConstraint("tip_amount >= 0", name="ck_payments_tip"),
     )
 
     order_id: Mapped[uuid.UUID] = mapped_column(
@@ -881,6 +927,7 @@ class Payment(UUIDBaseModel):
         index=True,
     )
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    tip_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
     method: Mapped[PaymentMethod] = mapped_column(
         Enum(PaymentMethod, name="paymentmethod"),
         nullable=False,
@@ -897,6 +944,20 @@ class Payment(UUIDBaseModel):
 
     order: Mapped["Order"] = relationship("Order", back_populates="payments", lazy="joined")
 
+
+class TableSession(UUIDBaseModel):
+    __tablename__ = "table_sessions"
+
+    table_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("restaurant_tables.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    guest_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    waiter_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
 class Sale(UUIDBaseModel):
     __tablename__ = "sales"
