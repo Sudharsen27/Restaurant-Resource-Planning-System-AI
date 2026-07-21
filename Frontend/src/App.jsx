@@ -21,6 +21,9 @@ const Profile = lazy(() => import('./pages/Profile'))
 const Sessions = lazy(() => import('./pages/Sessions'))
 const Unauthorized = lazy(() => import('./pages/Unauthorized'))
 const PosPage = lazy(() => import('./pages/PosPage'))
+const KitchenPage = lazy(() => import('./pages/KitchenPage'))
+const FloorPlanPage = lazy(() => import('./pages/FloorPlanPage'))
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const SupportPage = lazy(() => import('./pages/SupportPage'))
 const SystemStatusPage = lazy(() => import('./pages/SystemStatusPage'))
@@ -140,6 +143,9 @@ function App() {
               <Route path="inventory-transactions" element={<InventoryTransactionsPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="pos" element={<PosPage />} />
+              <Route path="kitchen" element={<KitchenPage />} />
+              <Route path="floor" element={<FloorPlanPage />} />
+              <Route path="payments" element={<PaymentsPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route path="employees" element={<EmployeesPage />} />
               <Route path="forecast" element={<Forecast />} />

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import EntityListPage from '../../components/pages/EntityListPage'
 import RestaurantFormModal from '../../components/erp/RestaurantFormModal'
@@ -17,7 +18,7 @@ import { listProducts, createProduct, exportProductsCsv, importProductsCsv } fro
 import { listSuppliers, createSupplier } from '../../services/supplierService'
 import { listCustomers } from '../../services/customerService'
 import { listEmployees } from '../../services/employeeService'
-import { listOrders } from '../../services/orderService'
+import { listOrders, updateOrder } from '../../services/orderService'
 import { listInventoryItems } from '../../services/inventoryItemService'
 import { adjustInventory } from '../../services/catalogService'
 import { useOrg } from '../../context/OrgContext'
@@ -595,15 +596,30 @@ export function SuppliersPage() {
 }
 
 export function OrdersPage() {
-  const { restaurant } = useOrg()
+  const { restaurant, branch } = useOrg()
+  const queryClient = useQueryClient()
+  const { success, error: toastError } = useToast()
+  const [statusFilter, setStatusFilter] = useState('')
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['orders', restaurant?.id],
+    queryKey: ['orders', restaurant?.id, branch?.id, statusFilter],
     queryFn: async () => {
-      const res = await listOrders(
-        restaurant?.id ? { restaurant_id: restaurant.id } : {},
-      )
+      const res = await listOrders({
+        ...(restaurant?.id ? { restaurant_id: restaurant.id } : {}),
+        ...(branch?.id ? { branch_id: branch.id } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
+      })
       return res.data || []
     },
+  })
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => updateOrder(id, { status }),
+    onSuccess: () => {
+      success('Order updated')
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+    onError: (e) => toastError(e.message),
   })
 
   return (
@@ -613,16 +629,56 @@ export function OrdersPage() {
       )}
       <EntityListPage
         title="Orders"
-        description="POS and online order ledger"
+        description="POS order ledger · dine-in / takeaway / delivery"
         entity="orders"
         rows={data || []}
         loading={isLoading}
+        headerActions={
+          <div className="flex flex-wrap gap-2">
+            <select
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All statuses</option>
+              {['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'CANCELLED'].map(
+                (s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ),
+              )}
+            </select>
+            <Link to="/pos">
+              <Button>Open POS</Button>
+            </Link>
+            <Link to="/kitchen">
+              <Button variant="secondary">Kitchen</Button>
+            </Link>
+          </div>
+        }
         columns={[
           { key: 'id', label: 'Order' },
+          { key: 'order_type', label: 'Type' },
+          { key: 'table_number', label: 'Table', render: (v) => v || '—' },
           { key: 'customer', label: 'Customer' },
           { key: 'branch', label: 'Branch' },
           { key: 'total', label: 'Total', render: (v) => formatCurrency(Number(v)) },
           { key: 'status', label: 'Status' },
+          {
+            key: 'actions',
+            label: '',
+            render: (_, row) =>
+              row.status_code !== 'COMPLETED' && row.status_code !== 'CANCELLED' ? (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => statusMutation.mutate({ id: row.uuid, status: 'CANCELLED' })}
+                >
+                  Cancel
+                </Button>
+              ) : null,
+          },
         ]}
       />
     </>
@@ -786,6 +842,7 @@ export function CustomersPage() {
           { key: 'name', label: 'Customer' },
           { key: 'visits', label: 'Visits' },
           { key: 'spend', label: 'Spend', render: (v) => formatCurrency(Number(v)) },
+          { key: 'loyalty_points', label: 'Loyalty' },
           { key: 'status', label: 'Status' },
         ]}
       />
