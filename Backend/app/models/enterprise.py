@@ -29,9 +29,11 @@ from app.models.enums import (
     AuditAction,
     DocumentType,
     EmployeeRole,
+    EmploymentType,
     InventoryStatus,
     InventoryTransactionType,
     KitchenItemStatus,
+    MembershipLevel,
     NotificationType,
     OrderStatus,
     OrderType,
@@ -355,6 +357,15 @@ class Employee(UUIDBaseModel):
     role: Mapped[EmployeeRole] = mapped_column(Enum(EmployeeRole, name="employeerole"), nullable=False)
     hire_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     hourly_wage: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
+    photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    designation: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    monthly_salary: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, server_default="0")
+    employment_type: Mapped[EmploymentType] = mapped_column(
+        Enum(EmploymentType, name="employmenttype"),
+        nullable=False,
+        server_default=EmploymentType.FULL_TIME.value,
+    )
+    emergency_contact: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     branch: Mapped["Branch"] = relationship(
         "Branch",
@@ -388,6 +399,25 @@ class Customer(UUIDBaseModel):
     loyalty_points: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
     preferences: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    anniversary: Mapped[date | None] = mapped_column(Date, nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    preferred_branch_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("branches.id", ondelete="SET NULL"), nullable=True
+    )
+    preferred_table_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("restaurant_tables.id", ondelete="SET NULL"), nullable=True
+    )
+    allergies: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_vip: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    membership_level: Mapped[MembershipLevel] = mapped_column(
+        Enum(MembershipLevel, name="membershiplevel"),
+        nullable=False,
+        server_default=MembershipLevel.BRONZE.value,
+    )
+    referred_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True
+    )
 
 
 class Supplier(UUIDBaseModel):

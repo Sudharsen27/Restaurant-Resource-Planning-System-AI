@@ -9,6 +9,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.models.enums import MembershipLevel
+
 
 class CustomerCreate(BaseModel):
     restaurant_id: UUID
@@ -22,6 +24,15 @@ class CustomerCreate(BaseModel):
     loyalty_points: int = Field(default=0, ge=0)
     birthday: date | None = None
     preferences: dict[str, Any] | list[Any] | None = None
+    anniversary: date | None = None
+    address: str | None = None
+    preferred_branch_id: UUID | None = None
+    preferred_table_id: UUID | None = None
+    allergies: str | None = None
+    is_vip: bool = False
+    tags: list[str] | None = None
+    membership_level: MembershipLevel = MembershipLevel.BRONZE
+    referred_by_id: UUID | None = None
     is_active: bool = True
 
 
@@ -37,6 +48,15 @@ class CustomerUpdate(BaseModel):
     loyalty_points: int | None = Field(default=None, ge=0)
     birthday: date | None = None
     preferences: dict[str, Any] | list[Any] | None = None
+    anniversary: date | None = None
+    address: str | None = None
+    preferred_branch_id: UUID | None = None
+    preferred_table_id: UUID | None = None
+    allergies: str | None = None
+    is_vip: bool | None = None
+    tags: list[str] | None = None
+    membership_level: MembershipLevel | None = None
+    referred_by_id: UUID | None = None
     is_active: bool | None = None
 
 
@@ -55,7 +75,32 @@ class CustomerOut(BaseModel):
     loyalty_points: int = 0
     birthday: date | None = None
     preferences: Any = None
+    anniversary: date | None = None
+    address: str | None = None
+    preferred_branch_id: UUID | None = None
+    preferred_table_id: UUID | None = None
+    allergies: str | None = None
+    is_vip: bool = False
+    tags: list[str] | None = None
+    membership_level: MembershipLevel = MembershipLevel.BRONZE
+    referred_by_id: UUID | None = None
     status: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class CustomerOrderTimelineItem(BaseModel):
+    order_id: UUID
+    order_number: str
+    order_date: datetime
+    total: Decimal
+    status: str
+    branch_id: UUID
+    guest_count: int
+
+
+class CustomerProfileOut(BaseModel):
+    customer: CustomerOut
+    order_timeline: list[CustomerOrderTimelineItem]
+    total_orders: int

@@ -17,6 +17,16 @@ from app.api.catalog import (
     units_router,
 )
 from app.api.categories import router as categories_router
+from app.api.crm_hrms import (
+    attendance_router,
+    crm_router,
+    hrms_router,
+    leaves_router,
+    loyalty_router,
+    payroll_router,
+    reservations_router,
+    shifts_router,
+)
 from app.api.customers import router as customers_router
 from app.api.dataset import router as dataset_router
 from app.api.employees import router as employees_router
@@ -74,6 +84,14 @@ v1_router.include_router(transfers_router)
 v1_router.include_router(catalog_router)
 v1_router.include_router(erp_inventory_router)
 v1_router.include_router(customers_router)
+v1_router.include_router(crm_router)
+v1_router.include_router(loyalty_router)
+v1_router.include_router(reservations_router)
+v1_router.include_router(shifts_router)
+v1_router.include_router(attendance_router)
+v1_router.include_router(leaves_router)
+v1_router.include_router(payroll_router)
+v1_router.include_router(hrms_router)
 v1_router.include_router(employees_router)
 v1_router.include_router(inventory_items_router)
 v1_router.include_router(orders_router)

@@ -15,6 +15,7 @@ from app.schemas.employee import EmployeeCreate, EmployeeOut, EmployeeUpdate
 
 def _to_out(row: Employee) -> EmployeeOut:
     role_value = row.role.value if hasattr(row.role, "value") else str(row.role)
+    emp_type = row.employment_type
     return EmployeeOut(
         id=row.id,
         branch_id=row.branch_id,
@@ -27,6 +28,13 @@ def _to_out(row: Employee) -> EmployeeOut:
         role=role_value,
         email=row.email,
         phone=row.phone,
+        hire_date=row.hire_date,
+        hourly_wage=row.hourly_wage,
+        monthly_salary=getattr(row, "monthly_salary", 0) or 0,
+        employment_type=emp_type if emp_type is not None else "FULL_TIME",
+        designation=getattr(row, "designation", None),
+        photo_url=getattr(row, "photo_url", None),
+        emergency_contact=getattr(row, "emergency_contact", None),
         status="Active" if row.is_active and not row.is_deleted else "Inactive",
         is_active=row.is_active,
         created_at=row.created_at,
@@ -71,6 +79,11 @@ class EmployeeService:
             role=payload.role,
             hire_date=payload.hire_date,
             hourly_wage=payload.hourly_wage,
+            monthly_salary=payload.monthly_salary,
+            employment_type=payload.employment_type,
+            designation=payload.designation,
+            photo_url=payload.photo_url,
+            emergency_contact=payload.emergency_contact,
             is_active=payload.is_active,
             created_by=actor_id,
             updated_by=actor_id,

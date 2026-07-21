@@ -45,7 +45,22 @@ def init_database() -> None:
         raise RuntimeError("Cannot connect to PostgreSQL. Check DATABASE_URL.")
 
     if settings.use_alembic:
-        run_alembic_upgrade("head")
+        # Skip when already at head — avoids long/locked upgrade on every restart.
+        from alembic.runtime.migration import MigrationContext
+        from alembic.script import ScriptDirectory
+        from alembic.config import Config
+
+        cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
+        cfg.set_main_option("sqlalchemy.url", settings.database_url)
+        script = ScriptDirectory.from_config(cfg)
+        head = script.get_current_head()
+        with engine.connect() as conn:
+            context = MigrationContext.configure(conn)
+            current = context.get_current_revision()
+        if current == head:
+            logger.info("Alembic already at head (%s) — skip upgrade", head)
+        else:
+            run_alembic_upgrade("head")
         return
 
     if settings.allow_create_all and not settings.is_production:

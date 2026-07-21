@@ -19,6 +19,9 @@ class EmployeeRole(str, enum.Enum):
     CLEANER = "CLEANER"
     MANAGER = "MANAGER"
     SUPERVISOR = "SUPERVISOR"
+    INVENTORY_MANAGER = "INVENTORY_MANAGER"
+    HR = "HR"
+    ACCOUNTANT = "ACCOUNTANT"
 
 
 class InventoryStatus(str, enum.Enum):
@@ -125,6 +128,75 @@ class TableStatus(str, enum.Enum):
     RESERVED = "RESERVED"
     CLEANING = "CLEANING"
     MAINTENANCE = "MAINTENANCE"
+
+
+class MembershipLevel(str, enum.Enum):
+    BRONZE = "BRONZE"
+    SILVER = "SILVER"
+    GOLD = "GOLD"
+    PLATINUM = "PLATINUM"
+
+
+class LoyaltyTxnType(str, enum.Enum):
+    EARN = "EARN"
+    REDEEM = "REDEEM"
+    ADJUST = "ADJUST"
+    BIRTHDAY = "BIRTHDAY"
+    REFERRAL = "REFERRAL"
+    EXPIRE = "EXPIRE"
+
+
+class ReservationStatus(str, enum.Enum):
+    WAITLIST = "WAITLIST"
+    RESERVED = "RESERVED"
+    CONFIRMED = "CONFIRMED"
+    CHECKED_IN = "CHECKED_IN"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+class ShiftType(str, enum.Enum):
+    MORNING = "MORNING"
+    AFTERNOON = "AFTERNOON"
+    NIGHT = "NIGHT"
+    CUSTOM = "CUSTOM"
+
+
+class AttendanceStatus(str, enum.Enum):
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+    LATE = "LATE"
+    EARLY_LEAVE = "EARLY_LEAVE"
+    ON_LEAVE = "ON_LEAVE"
+    HALF_DAY = "HALF_DAY"
+
+
+class LeaveTypeCode(str, enum.Enum):
+    ANNUAL = "ANNUAL"
+    SICK = "SICK"
+    CASUAL = "CASUAL"
+    EMERGENCY = "EMERGENCY"
+
+
+class LeaveRequestStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+
+class EmploymentType(str, enum.Enum):
+    FULL_TIME = "FULL_TIME"
+    PART_TIME = "PART_TIME"
+    CONTRACT = "CONTRACT"
+    INTERN = "INTERN"
+
+
+class PayrollStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    GENERATED = "GENERATED"
+    LOCKED = "LOCKED"
+    PAID = "PAID"
 
 
 class DocumentType(str, enum.Enum):

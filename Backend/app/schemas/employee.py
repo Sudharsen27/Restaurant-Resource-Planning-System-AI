@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models.enums import EmployeeRole
+from app.models.enums import EmployeeRole, EmploymentType
 
 
 class EmployeeCreate(BaseModel):
@@ -21,6 +21,11 @@ class EmployeeCreate(BaseModel):
     role: EmployeeRole
     hire_date: date | None = None
     hourly_wage: Decimal = Field(default=Decimal("0"), ge=0)
+    monthly_salary: Decimal = Field(default=Decimal("0"), ge=0)
+    employment_type: EmploymentType = EmploymentType.FULL_TIME
+    designation: str | None = Field(default=None, max_length=120)
+    photo_url: str | None = Field(default=None, max_length=500)
+    emergency_contact: str | None = Field(default=None, max_length=255)
     user_id: int | None = None
     is_active: bool = True
 
@@ -35,6 +40,11 @@ class EmployeeUpdate(BaseModel):
     role: EmployeeRole | None = None
     hire_date: date | None = None
     hourly_wage: Decimal | None = Field(default=None, ge=0)
+    monthly_salary: Decimal | None = Field(default=None, ge=0)
+    employment_type: EmploymentType | None = None
+    designation: str | None = Field(default=None, max_length=120)
+    photo_url: str | None = Field(default=None, max_length=500)
+    emergency_contact: str | None = Field(default=None, max_length=255)
     user_id: int | None = None
     is_active: bool | None = None
 
@@ -53,6 +63,13 @@ class EmployeeOut(BaseModel):
     role: str
     email: str | None = None
     phone: str | None = None
+    hire_date: date | None = None
+    hourly_wage: Decimal = Decimal("0")
+    monthly_salary: Decimal = Decimal("0")
+    employment_type: EmploymentType = EmploymentType.FULL_TIME
+    designation: str | None = None
+    photo_url: str | None = None
+    emergency_contact: str | None = None
     status: str
     is_active: bool
     created_at: datetime

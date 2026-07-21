@@ -39,6 +39,16 @@ def list_customers(
     }
 
 
+@router.get("/{customer_id}/profile")
+def get_customer_profile(
+    customer_id: UUID,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> dict:
+    data = CustomerService(db).get_customer_profile(customer_id)
+    return {"success": True, "message": "Customer profile fetched", "data": data}
+
+
 @router.get("/{customer_id}")
 def get_customer(
     customer_id: UUID,

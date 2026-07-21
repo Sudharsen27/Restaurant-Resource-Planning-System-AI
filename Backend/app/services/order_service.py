@@ -44,6 +44,7 @@ from app.schemas.order import (
 )
 from app.services.audit_service import write_audit
 from app.services.inventory_ledger import apply_stock_change, assert_product_orderable
+from app.services.loyalty_service import LoyaltyService
 from app.realtime.ops_hub import publish_ops_event
 
 
@@ -542,9 +543,17 @@ class OrderService:
                 if cust and not cust.is_deleted:
                     cust.visit_count = (cust.visit_count or 0) + 1
                     cust.lifetime_spend = _dec(cust.lifetime_spend) + payment.amount
-                    cust.loyalty_points = (cust.loyalty_points or 0) + int(payment.amount // 100)
                     cust.last_visit_at = datetime.now(timezone.utc)
                     cust.updated_by = actor_id
+                    branch = self.db.get(Branch, row.branch_id)
+                    if branch:
+                        LoyaltyService(self.db).earn_from_order(
+                            cust,
+                            branch.restaurant_id,
+                            payment.amount,
+                            row.id,
+                            actor_id=actor_id,
+                        )
 
         write_audit(
             self.db,

@@ -7,6 +7,19 @@ from app.models.auth import (
 )
 from app.models.customer_forecast import CustomerForecast
 from app.models.dashboard_summary_record import DashboardSummaryRecord
+from app.models.crm_hrms import (
+    AttendanceRecord,
+    Coupon,
+    LeaveBalance,
+    LeaveRequest,
+    LoyaltyRule,
+    LoyaltyTransaction,
+    PayrollRun,
+    Payslip,
+    Reservation,
+    ShiftAssignment,
+    ShiftTemplate,
+)
 from app.models.enterprise import (
     AuditLog,
     Branch,
@@ -114,6 +127,17 @@ __all__ = [
     "TableSession",
     "Notification",
     "AuditLog",
+    "LoyaltyTransaction",
+    "LoyaltyRule",
+    "Coupon",
+    "Reservation",
+    "ShiftTemplate",
+    "ShiftAssignment",
+    "AttendanceRecord",
+    "LeaveBalance",
+    "LeaveRequest",
+    "PayrollRun",
+    "Payslip",
     "UserSession",
     "PasswordResetToken",
     "EmailVerificationToken",

@@ -97,6 +97,10 @@ def seed_rbac(db) -> None:
         "EMPLOYEE",
         "ADMIN",
         "MANAGER",
+        "WAITER",
+        "CHEF",
+        "HR",
+        "ACCOUNTANT",
     ]
     permissions = [
         "users.read",
@@ -109,6 +113,26 @@ def seed_rbac(db) -> None:
         "orders.create",
         "reports.read",
         "settings.update",
+        "customers.read",
+        "customers.create",
+        "customers.update",
+        "customers.delete",
+        "reservations.read",
+        "reservations.create",
+        "reservations.update",
+        "reservations.delete",
+        "hrms.read",
+        "hrms.create",
+        "hrms.update",
+        "hrms.delete",
+        "payroll.read",
+        "payroll.create",
+        "payroll.update",
+        "payroll.delete",
+        "loyalty.read",
+        "loyalty.create",
+        "loyalty.update",
+        "loyalty.delete",
     ]
 
     existing_roles = {r.name: r for r in db.scalars(select(Role)).all()}
@@ -132,6 +156,10 @@ def seed_rbac(db) -> None:
     manager = existing_roles["MANAGER"]
     inventory_manager = existing_roles["INVENTORY_MANAGER"]
     cashier = existing_roles["CASHIER"]
+    waiter = existing_roles["WAITER"]
+    chef = existing_roles["CHEF"]
+    hr = existing_roles["HR"]
+    accountant = existing_roles["ACCOUNTANT"]
 
     super_admin.permissions = list(existing_permissions.values())
     manager.permissions = [
@@ -139,6 +167,11 @@ def seed_rbac(db) -> None:
         existing_permissions["inventory.read"],
         existing_permissions["orders.read"],
         existing_permissions["reports.read"],
+        existing_permissions["customers.read"],
+        existing_permissions["reservations.read"],
+        existing_permissions["hrms.read"],
+        existing_permissions["payroll.read"],
+        existing_permissions["loyalty.read"],
     ]
     inventory_manager.permissions = [
         existing_permissions["inventory.read"],
@@ -147,6 +180,38 @@ def seed_rbac(db) -> None:
     cashier.permissions = [
         existing_permissions["orders.read"],
         existing_permissions["orders.create"],
+        existing_permissions["customers.read"],
+        existing_permissions["loyalty.read"],
+    ]
+    waiter.permissions = [
+        existing_permissions["orders.read"],
+        existing_permissions["orders.create"],
+        existing_permissions["customers.read"],
+        existing_permissions["customers.update"],
+        existing_permissions["reservations.read"],
+        existing_permissions["reservations.create"],
+        existing_permissions["reservations.update"],
+        existing_permissions["reservations.delete"],
+    ]
+    chef.permissions = [
+        existing_permissions["orders.read"],
+        existing_permissions["hrms.read"],
+    ]
+    hr.permissions = [
+        existing_permissions["hrms.read"],
+        existing_permissions["hrms.create"],
+        existing_permissions["hrms.update"],
+        existing_permissions["hrms.delete"],
+        existing_permissions["payroll.read"],
+        existing_permissions["customers.read"],
+    ]
+    accountant.permissions = [
+        existing_permissions["payroll.read"],
+        existing_permissions["payroll.create"],
+        existing_permissions["payroll.update"],
+        existing_permissions["payroll.delete"],
+        existing_permissions["reports.read"],
+        existing_permissions["hrms.read"],
     ]
 
 
