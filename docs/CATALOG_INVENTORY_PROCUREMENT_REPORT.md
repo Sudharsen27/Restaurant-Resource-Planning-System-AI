@@ -3,7 +3,26 @@
 **Project:** Restaurant Resource Planning System  
 **Phase:** Catalog / Inventory / Procurement (post Phase 5 Ops MDM)  
 **Date:** 2026-07-20  
-**Migration head:** `e5f6a7b8c9d0`
+**Migration head:** `e5f6a7b8c9d0` → **`f6a7b8c9d0e1`** (gap closure)
+
+---
+
+## Phase 6 gap closure (2026-07-21)
+
+| Area | Detail |
+|------|--------|
+| Warehouses | CRUD API + FE (`/warehouses`) with capacity / current stock / utilization |
+| Product CSV | `GET /products/export/csv`, `POST /products/import/csv` + FE Import/Export |
+| Units UI | `/units` — list/create units + conversions |
+| Stock adjust | Adjust modal on Stock page (ledger-backed) |
+| Supplier | `company_name`, `pan_number`, `credit_days` |
+| Inventory | `damaged_quantity`, `manufacturing_date`, `warehouse_id` |
+| Ledger | `DAMAGE`, `PRODUCTION` types |
+| PO | `PARTIAL_RECEIVED` + `purchase_order_approvals` |
+| Availability | `product_branch_availability`, `menu_item_branch_availability` tables |
+| Recipes | Margin vs menu selling price |
+| Menu | `calories` |
+| Alerts | `NEGATIVE` available stock |
 
 ---
 
