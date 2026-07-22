@@ -145,6 +145,42 @@ const ReportsCenterPage = lazy(() =>
 const AiAssistantPage = lazy(() =>
   import('./pages/bi/BiPages').then((m) => ({ default: m.AiAssistantPage })),
 )
+const AdminOverviewPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.AdminOverviewPage })),
+)
+const WorkflowBuilderPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.WorkflowBuilderPage })),
+)
+const NotificationCenterPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.NotificationCenterPage })),
+)
+const JobSchedulerPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.JobSchedulerPage })),
+)
+const ReportSchedulerPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.ReportSchedulerPage })),
+)
+const SystemSettingsPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.SystemSettingsPage })),
+)
+const AuditCenterPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.AuditCenterPage })),
+)
+const FileManagementPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.FileManagementPage })),
+)
+const ApiManagementPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.ApiManagementPage })),
+)
+const IntegrationsPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.IntegrationsPage })),
+)
+const HealthDashboardPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.HealthDashboardPage })),
+)
+const SecurityCenterPage = lazy(() =>
+  import('./pages/admin/AdminPages').then((m) => ({ default: m.SecurityCenterPage })),
+)
 
 function App() {
   return (
@@ -204,6 +240,18 @@ function App() {
               <Route path="insights" element={<InsightsAlertsPage />} />
               <Route path="reports-center" element={<ReportsCenterPage />} />
               <Route path="ai-assistant" element={<AiAssistantPage />} />
+              <Route path="admin-console" element={<AdminOverviewPage />} />
+              <Route path="workflow-builder" element={<WorkflowBuilderPage />} />
+              <Route path="notification-center" element={<NotificationCenterPage />} />
+              <Route path="job-scheduler" element={<JobSchedulerPage />} />
+              <Route path="report-scheduler" element={<ReportSchedulerPage />} />
+              <Route path="system-settings" element={<SystemSettingsPage />} />
+              <Route path="audit-center" element={<AuditCenterPage />} />
+              <Route path="file-management" element={<FileManagementPage />} />
+              <Route path="api-management" element={<ApiManagementPage />} />
+              <Route path="integrations" element={<IntegrationsPage />} />
+              <Route path="health-dashboard" element={<HealthDashboardPage />} />
+              <Route path="security-center" element={<SecurityCenterPage />} />
               <Route path="forecast" element={<Forecast />} />
               <Route path="staff" element={<StaffPlanner />} />
               <Route path="inventory" element={<InventoryPlanner />} />
