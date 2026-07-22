@@ -54,6 +54,8 @@ class RestaurantService:
         skip: int = 0,
         limit: int = 100,
         active_only: bool = False,
+        organization_id: UUID | None = None,
+        allowed_restaurant_ids: list[UUID] | None = None,
     ) -> list[RestaurantOut]:
         rows = self.repo.list_filtered(
             search=search,
@@ -61,6 +63,11 @@ class RestaurantService:
             limit=limit,
             active_only=active_only,
         )
+        if organization_id is not None:
+            rows = [r for r in rows if r.organization_id == organization_id]
+        if allowed_restaurant_ids is not None:
+            allowed = set(allowed_restaurant_ids)
+            rows = [r for r in rows if r.id in allowed]
         return [_to_out(r) for r in rows]
 
     def get_restaurant(self, restaurant_id: UUID) -> RestaurantOut:

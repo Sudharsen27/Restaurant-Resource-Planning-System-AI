@@ -55,6 +55,7 @@ from app.api.products import router as products_router
 from app.api.recommendation import router as recommendation_router
 from app.api.restaurants import router as restaurants_router
 from app.api.root import router as root_router
+from app.api.saas import router as saas_router
 from app.api.staff import router as staff_router
 from app.api.suppliers import router as suppliers_router
 from app.api.warehouses import router as warehouses_router
@@ -102,6 +103,7 @@ v1_router.include_router(notifications_router)
 v1_router.include_router(erp_dashboard_router)
 v1_router.include_router(analytics_bi_router)
 v1_router.include_router(automation_admin_router)
+v1_router.include_router(saas_router)
 v1_router.include_router(latest_snapshots_router)
 v1_router.include_router(forecast_ml_router)
 v1_router.include_router(forecast_router)

@@ -21,14 +21,20 @@ def list_restaurants(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     active_only: bool = Query(default=False),
+    organization_id: UUID | None = Query(default=None),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ) -> dict:
+    from app.services.saas_service import SaaSService
+
+    allowed = SaaSService(db).restaurant_ids_for_user(user)
     data = RestaurantService(db).list_restaurants(
         search=search,
         skip=skip,
         limit=limit,
         active_only=active_only,
+        organization_id=organization_id,
+        allowed_restaurant_ids=allowed,
     )
     return {
         "success": True,

@@ -89,6 +89,17 @@ from app.models.inventory_recommendation import InventoryRecommendation
 from app.models.model_version import ModelVersion
 from app.models.prediction_history import PredictionHistory
 from app.models.retraining_history import RetrainingHistory
+from app.models.saas import (
+    Organization,
+    OrganizationMembership,
+    OrganizationSubscription,
+    PaymentHistory,
+    SubscriptionInvoice,
+    SubscriptionPlan,
+    SupportTicket,
+    TenantFeatureFlag,
+    UsageMetric,
+)
 from app.models.staff_plan_record import StaffPlanRecord
 from app.models.staff_recommendation import StaffRecommendation
 from app.models.user import User
@@ -181,4 +192,13 @@ __all__ = [
     "IntegrationConnector",
     "LoginEvent",
     "SecurityAlert",
+    "Organization",
+    "OrganizationMembership",
+    "SubscriptionPlan",
+    "OrganizationSubscription",
+    "SubscriptionInvoice",
+    "PaymentHistory",
+    "UsageMetric",
+    "TenantFeatureFlag",
+    "SupportTicket",
 ]

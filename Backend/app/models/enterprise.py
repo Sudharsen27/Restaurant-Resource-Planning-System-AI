@@ -70,6 +70,12 @@ role_permissions = Table(
 class Restaurant(UUIDBaseModel):
     __tablename__ = "restaurants"
 
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     code: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)
     city: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)

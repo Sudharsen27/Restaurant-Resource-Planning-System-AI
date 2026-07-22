@@ -277,3 +277,45 @@ class SecuritySeverity(str, enum.Enum):
     INFORMATION = "INFORMATION"
     WARNING = "WARNING"
     CRITICAL = "CRITICAL"
+
+
+class OrganizationStatus(str, enum.Enum):
+    TRIAL = "TRIAL"
+    ACTIVE = "ACTIVE"
+    GRACE = "GRACE"
+    SUSPENDED = "SUSPENDED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
+class SubscriptionPlanCode(str, enum.Enum):
+    STARTER = "STARTER"
+    PROFESSIONAL = "PROFESSIONAL"
+    BUSINESS = "BUSINESS"
+    ENTERPRISE = "ENTERPRISE"
+
+
+class SubscriptionStatus(str, enum.Enum):
+    TRIAL = "TRIAL"
+    ACTIVE = "ACTIVE"
+    PAST_DUE = "PAST_DUE"
+    GRACE = "GRACE"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+
+
+class InvoiceStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    OPEN = "OPEN"
+    PAID = "PAID"
+    VOID = "VOID"
+    UNCOLLECTIBLE = "UNCOLLECTIBLE"
+
+
+class OrgMemberRole(str, enum.Enum):
+    OWNER = "OWNER"
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    MEMBER = "MEMBER"
+    BILLING = "BILLING"
+    SUPPORT = "SUPPORT"
