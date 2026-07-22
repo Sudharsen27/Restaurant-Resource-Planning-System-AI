@@ -51,6 +51,7 @@ from app.api.operations import (
     settings_router,
     tables_router,
 )
+from app.api.platform import router as platform_router
 from app.api.products import router as products_router
 from app.api.recommendation import router as recommendation_router
 from app.api.restaurants import router as restaurants_router
@@ -63,6 +64,7 @@ from app.api.warehouses import router as warehouses_router
 v1_router = APIRouter()
 v1_router.include_router(root_router)
 v1_router.include_router(health_router)
+v1_router.include_router(platform_router)
 v1_router.include_router(auth_router)
 v1_router.include_router(restaurants_router)
 v1_router.include_router(branches_router)

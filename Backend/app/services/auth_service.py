@@ -5,8 +5,8 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
@@ -16,19 +16,28 @@ from app.models import AuditLog, Permission, Role, User
 from app.models.auth import EmailVerificationToken, PasswordHistory, PasswordResetToken, UserSession
 from app.models.enums import AuditAction
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash with bcrypt directly (passlib is incompatible with bcrypt>=4.1)."""
+    secret = password.encode("utf-8")
+    # bcrypt hard-limits to 72 bytes
+    if len(secret) > 72:
+        secret = secret[:72]
+    return bcrypt.hashpw(secret, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        secret = plain_password.encode("utf-8")
+        if len(secret) > 72:
+            secret = secret[:72]
+        return bcrypt.checkpw(secret, hashed_password.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def _hash_token(token: str) -> str:

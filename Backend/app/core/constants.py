@@ -12,7 +12,7 @@ DEFAULT_DATASET_CSV = DEFAULT_DATASET_DIR / "restaurant_data.csv"
 
 # API
 API_V1_PREFIX = "/api/v1"
-APP_VERSION = "0.6.0"
+APP_VERSION = "1.0.0"
 
 # Logging
 LOG_FORMAT_JSON = "json"

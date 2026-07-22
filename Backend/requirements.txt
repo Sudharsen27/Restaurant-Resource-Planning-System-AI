@@ -1,9 +1,11 @@
 alembic>=1.14.0
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
+gunicorn>=23.0.0
 sqlalchemy>=2.0.36
 PyJWT>=2.9.0
-passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.1,<5
+passlib>=1.7.4
 pydantic>=2.10.0
 pydantic-settings>=2.6.0
 python-dotenv>=1.0.1
@@ -17,5 +19,14 @@ scikit-learn>=1.5.0
 joblib>=1.4.0
 matplotlib>=3.9.0
 pytest>=8.3.0
-
 python-multipart>=0.0.9
+
+# Phase 12 — Redis, queue, observability, multi-cloud storage
+redis>=5.2.0
+celery[redis]>=5.4.0
+prometheus-client>=0.21.0
+sentry-sdk[fastapi]>=2.19.0
+boto3>=1.35.0
+azure-storage-blob>=12.23.0
+google-cloud-storage>=2.18.0
+psutil>=6.1.0

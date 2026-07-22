@@ -1,0 +1,38 @@
+# Restaurant ERP — Celery worker & beat scheduler
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    APP_ENV=production \
+    DEBUG=false \
+    LOG_FORMAT=json \
+    C_FORCE_ROOT=0 \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    HOME=/tmp
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app && useradd --system --gid app --home /app app
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
+COPY --chown=app:app . .
+
+USER app
+
+# Default: worker. Override for scheduler:
+# celery -A app.celery_app.celery beat --loglevel=INFO
+CMD ["celery", "-A", "app.celery_app.celery", "worker", "--loglevel=INFO", "--concurrency=2"]

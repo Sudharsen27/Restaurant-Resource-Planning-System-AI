@@ -1,13 +1,8 @@
-"""Security utilities — JWT-ready stubs (auth not enforced on routes yet).
-
-When enabling auth:
-1. Set SECRET_KEY in .env
-2. Use create_access_token / decode_access_token
-3. Add Depends(get_current_user) on protected routes
-"""
+"""Security utilities — JWT helpers and response security headers."""
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -70,12 +65,24 @@ def decode_access_token(token: str) -> dict[str, Any]:
         raise UnauthorizedError("Invalid or expired token") from exc
 
 
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
 def security_headers() -> dict[str, str]:
-    """Standard security headers for responses."""
-    return {
+    """Standard security headers for responses (CSP / HSTS optional)."""
+    headers = {
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "X-XSS-Protection": "1; mode=block",
         "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     }
+    csp = settings.effective_csp
+    if csp:
+        headers["Content-Security-Policy"] = csp
+    if settings.hsts_enabled or (settings.is_production and settings.https_redirect_enabled):
+        headers["Strict-Transport-Security"] = (
+            f"max-age={settings.hsts_max_age_seconds}; includeSubDomains; preload"
+        )
+    return headers
