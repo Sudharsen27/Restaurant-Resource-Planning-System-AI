@@ -214,3 +214,66 @@ class AuditAction(str, enum.Enum):
     LOGOUT = "LOGOUT"
     RETRAIN = "RETRAIN"
     PREDICT = "PREDICT"
+
+
+class WorkflowEntityType(str, enum.Enum):
+    PURCHASE_APPROVAL = "PURCHASE_APPROVAL"
+    EXPENSE_APPROVAL = "EXPENSE_APPROVAL"
+    LEAVE_APPROVAL = "LEAVE_APPROVAL"
+    DISCOUNT_APPROVAL = "DISCOUNT_APPROVAL"
+    REFUND_APPROVAL = "REFUND_APPROVAL"
+    RESERVATION_APPROVAL = "RESERVATION_APPROVAL"
+    CUSTOM = "CUSTOM"
+
+
+class WorkflowStepType(str, enum.Enum):
+    APPROVAL = "APPROVAL"
+    REVIEW = "REVIEW"
+    AUTO_ACTION = "AUTO_ACTION"
+    NOTIFY = "NOTIFY"
+
+
+class WorkflowStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+    ESCALATED = "ESCALATED"
+
+
+class NotificationCategory(str, enum.Enum):
+    INFORMATION = "INFORMATION"
+    SUCCESS = "SUCCESS"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
+
+class DeliveryChannel(str, enum.Enum):
+    IN_APP = "IN_APP"
+    EMAIL = "EMAIL"
+    SMS = "SMS"
+    PUSH = "PUSH"
+    WHATSAPP = "WHATSAPP"
+
+
+class JobRunStatus(str, enum.Enum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    RETRYING = "RETRYING"
+    CANCELLED = "CANCELLED"
+    PAUSED = "PAUSED"
+
+
+class ApiKeyStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    REVOKED = "REVOKED"
+    EXPIRED = "EXPIRED"
+    DISABLED = "DISABLED"
+
+
+class SecuritySeverity(str, enum.Enum):
+    INFORMATION = "INFORMATION"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"

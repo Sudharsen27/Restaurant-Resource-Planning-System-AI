@@ -28,6 +28,7 @@ from app.services.auth_service import (
     rotate_refresh_token,
     terminate_session,
 )
+from app.services.automation_service import AutomationService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -54,6 +55,14 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         password=payload.password,
         ip_address=_client_ip(request),
         user_agent=request.headers.get("user-agent"),
+    )
+    AutomationService(db).record_login_event(
+        user_id=user.id,
+        event_type="LOGIN",
+        success=True,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        message="User login successful",
     )
     return {
         "success": True,
@@ -97,6 +106,7 @@ def refresh(payload: RefreshRequest, request: Request, db: Session = Depends(get
 @router.post("/logout")
 def logout_endpoint(
     payload: LogoutRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
@@ -105,6 +115,14 @@ def logout_endpoint(
         user=current_user,
         refresh_token=payload.refresh_token,
         all_sessions=payload.all_sessions,
+    )
+    AutomationService(db).record_login_event(
+        user_id=current_user.id,
+        event_type="LOGOUT",
+        success=True,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        message="User logout successful",
     )
     return {
         "success": True,
@@ -131,6 +149,7 @@ def me(current_user: User = Depends(get_current_user)) -> dict:
 
 @router.post("/change-password")
 def change_password_endpoint(
+    request: Request,
     payload: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -140,6 +159,14 @@ def change_password_endpoint(
         user=current_user,
         current_password=payload.current_password,
         new_password=payload.new_password,
+    )
+    AutomationService(db).record_login_event(
+        user_id=current_user.id,
+        event_type="PASSWORD_CHANGE",
+        success=True,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        message="Password changed",
     )
     return {"success": True, "message": "Password changed successfully", "data": None}
 
