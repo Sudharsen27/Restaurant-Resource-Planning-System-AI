@@ -48,6 +48,9 @@ import {
   Link2,
   ServerCog,
   FolderKanban,
+  CreditCard,
+  Rocket,
+  Crown,
 } from 'lucide-react'
 
 /**
@@ -139,6 +142,20 @@ export const NAV_SECTIONS = [
       { to: '/analytics', label: 'Model Reports', icon: TrendingUp },
       { to: '/history', label: 'History', icon: History },
       { to: '/feedback', label: 'Feedback', icon: MessageSquare },
+    ],
+  },
+  {
+    id: 'saas',
+    label: 'SaaS Platform',
+    items: [
+      { to: '/organizations', label: 'Organizations', icon: Building2 },
+      { to: '/organization-dashboard', label: 'Org Dashboard', icon: LayoutDashboard },
+      { to: '/plans', label: 'Plans', icon: CreditCard },
+      { to: '/subscription-center', label: 'Subscriptions', icon: Wallet },
+      { to: '/billing-portal', label: 'Billing', icon: FileText },
+      { to: '/usage-dashboard', label: 'Usage', icon: Gauge },
+      { to: '/onboarding', label: 'Onboarding Wizard', icon: Rocket },
+      { to: '/super-admin', label: 'Super Admin', icon: Crown },
     ],
   },
   {
@@ -236,6 +253,14 @@ export const BREADCRUMB_LABELS = {
   integrations: 'Integrations',
   'health-dashboard': 'Health Dashboard',
   'security-center': 'Security Center',
+  organizations: 'Organizations',
+  'organization-dashboard': 'Org Dashboard',
+  plans: 'Plans',
+  'subscription-center': 'Subscriptions',
+  'billing-portal': 'Billing',
+  'usage-dashboard': 'Usage',
+  onboarding: 'Onboarding Wizard',
+  'super-admin': 'Super Admin',
   forecast: 'Forecast AI',
   notifications: 'Notifications',
   settings: 'Settings',

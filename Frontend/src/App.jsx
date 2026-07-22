@@ -181,6 +181,30 @@ const HealthDashboardPage = lazy(() =>
 const SecurityCenterPage = lazy(() =>
   import('./pages/admin/AdminPages').then((m) => ({ default: m.SecurityCenterPage })),
 )
+const OrganizationDashboardPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.OrganizationDashboardPage })),
+)
+const OrganizationsListPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.OrganizationsListPage })),
+)
+const PlanComparisonPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.PlanComparisonPage })),
+)
+const SubscriptionCenterPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.SubscriptionCenterPage })),
+)
+const BillingPortalPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.BillingPortalPage })),
+)
+const UsageDashboardPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.UsageDashboardPage })),
+)
+const OnboardingWizardPage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.OnboardingWizardPage })),
+)
+const SuperAdminConsolePage = lazy(() =>
+  import('./pages/saas/SaasPages').then((m) => ({ default: m.SuperAdminConsolePage })),
+)
 
 function App() {
   return (
@@ -252,6 +276,14 @@ function App() {
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="health-dashboard" element={<HealthDashboardPage />} />
               <Route path="security-center" element={<SecurityCenterPage />} />
+              <Route path="organizations" element={<OrganizationsListPage />} />
+              <Route path="organization-dashboard" element={<OrganizationDashboardPage />} />
+              <Route path="plans" element={<PlanComparisonPage />} />
+              <Route path="subscription-center" element={<SubscriptionCenterPage />} />
+              <Route path="billing-portal" element={<BillingPortalPage />} />
+              <Route path="usage-dashboard" element={<UsageDashboardPage />} />
+              <Route path="onboarding" element={<OnboardingWizardPage />} />
+              <Route path="super-admin" element={<SuperAdminConsolePage />} />
               <Route path="forecast" element={<Forecast />} />
               <Route path="staff" element={<StaffPlanner />} />
               <Route path="inventory" element={<InventoryPlanner />} />
