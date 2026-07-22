@@ -51,6 +51,12 @@ import {
   CreditCard,
   Rocket,
   Crown,
+  HardDrive,
+  Database,
+  ScrollText,
+  Radar,
+  Layers,
+  Container,
 } from 'lucide-react'
 
 /**
@@ -177,6 +183,20 @@ export const NAV_SECTIONS = [
     ],
   },
   {
+    id: 'platform-ops',
+    label: 'Platform Ops',
+    items: [
+      { to: '/system-monitoring', label: 'System Monitoring', icon: Radar },
+      { to: '/health-center', label: 'Health Center', icon: Activity },
+      { to: '/deployment-status', label: 'Deployment Status', icon: Container },
+      { to: '/migration-dashboard', label: 'Migrations', icon: Database },
+      { to: '/cache-management', label: 'Cache Management', icon: Layers },
+      { to: '/queue-monitor', label: 'Queue Monitor', icon: ServerCog },
+      { to: '/log-viewer', label: 'Log Viewer', icon: ScrollText },
+      { to: '/backup-center', label: 'Backup Center', icon: HardDrive },
+    ],
+  },
+  {
     id: 'system',
     label: 'System',
     items: [
@@ -253,6 +273,14 @@ export const BREADCRUMB_LABELS = {
   integrations: 'Integrations',
   'health-dashboard': 'Health Dashboard',
   'security-center': 'Security Center',
+  'system-monitoring': 'System Monitoring',
+  'health-center': 'Health Center',
+  'deployment-status': 'Deployment Status',
+  'migration-dashboard': 'Migrations',
+  'cache-management': 'Cache Management',
+  'queue-monitor': 'Queue Monitor',
+  'log-viewer': 'Log Viewer',
+  'backup-center': 'Backup Center',
   organizations: 'Organizations',
   'organization-dashboard': 'Org Dashboard',
   plans: 'Plans',

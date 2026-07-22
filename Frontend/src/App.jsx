@@ -181,6 +181,30 @@ const HealthDashboardPage = lazy(() =>
 const SecurityCenterPage = lazy(() =>
   import('./pages/admin/AdminPages').then((m) => ({ default: m.SecurityCenterPage })),
 )
+const SystemMonitoringPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.SystemMonitoringPage })),
+)
+const HealthCenterPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.HealthCenterPage })),
+)
+const DeploymentStatusPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.DeploymentStatusPage })),
+)
+const MigrationDashboardPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.MigrationDashboardPage })),
+)
+const CacheManagementPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.CacheManagementPage })),
+)
+const QueueMonitorPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.QueueMonitorPage })),
+)
+const LogViewerPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.LogViewerPage })),
+)
+const BackupCenterPage = lazy(() =>
+  import('./pages/ops/OpsPages').then((m) => ({ default: m.BackupCenterPage })),
+)
 const OrganizationDashboardPage = lazy(() =>
   import('./pages/saas/SaasPages').then((m) => ({ default: m.OrganizationDashboardPage })),
 )
@@ -276,6 +300,14 @@ function App() {
               <Route path="integrations" element={<IntegrationsPage />} />
               <Route path="health-dashboard" element={<HealthDashboardPage />} />
               <Route path="security-center" element={<SecurityCenterPage />} />
+              <Route path="system-monitoring" element={<SystemMonitoringPage />} />
+              <Route path="health-center" element={<HealthCenterPage />} />
+              <Route path="deployment-status" element={<DeploymentStatusPage />} />
+              <Route path="migration-dashboard" element={<MigrationDashboardPage />} />
+              <Route path="cache-management" element={<CacheManagementPage />} />
+              <Route path="queue-monitor" element={<QueueMonitorPage />} />
+              <Route path="log-viewer" element={<LogViewerPage />} />
+              <Route path="backup-center" element={<BackupCenterPage />} />
               <Route path="organizations" element={<OrganizationsListPage />} />
               <Route path="organization-dashboard" element={<OrganizationDashboardPage />} />
               <Route path="plans" element={<PlanComparisonPage />} />
