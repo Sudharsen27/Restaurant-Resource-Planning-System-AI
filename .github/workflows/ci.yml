@@ -82,7 +82,9 @@ jobs:
         run: python scripts/migrate.py
 
       - name: Pytest
-  run: python -m pytest -q --tb=short
+        run: python -m pytest -q --tb=short
+
+     
 
   frontend-lint-build:
     name: Frontend · Install · Lint · Build
