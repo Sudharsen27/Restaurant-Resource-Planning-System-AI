@@ -55,3 +55,9 @@ Backend/models/*.png
 
 # Frontend build
 Frontend/dist/
+
+# AWS CDK
+infrastructure/cdk.out/
+infrastructure/.cdk.staging/
+infrastructure/node_modules/
+

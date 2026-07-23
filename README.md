@@ -1,366 +1,323 @@
+<p align="center">
+  <img src="docs/screenshots/banner-placeholder.svg" alt="Restaurant Resource Planning System" width="720"/>
+</p>
+
 # Restaurant Resource Planning System (RRPS)
 
-Machine learning-driven restaurant operations platform that forecasts customer demand, plans staff and inventory, learns from manager feedback, and continuously improves model accuracy.
+**Enterprise Restaurant ERP + ML Forecasting Platform — v1.0.0**
+
+Multi-tenant restaurant operations suite: master data, catalog & inventory, POS/KDS, CRM & HRMS, analytics/BI, automation admin, SaaS billing, and a self-learning demand forecaster — packaged with Docker, CI/CD, and AWS-oriented infrastructure.
+
+[![CI](https://github.com/Sudharsen27/Restaurant-Resource-Planning-System-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/Sudharsen27/Restaurant-Resource-Planning-System-AI/actions/workflows/ci.yml)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docs/deployment/docker-compose.md)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](Backend/requirements.txt)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](Frontend/package.json)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](Backend/requirements.txt)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](docker-compose.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v1.0.0-blue.svg)](CHANGELOG.md)
 
 ---
 
-## Table of Contents
+## Table of contents
 
-- [Project Overview](#project-overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Folder Structure](#folder-structure)
-- [System Architecture](#system-architecture)
-- [Database Schema](#database-schema)
-- [Machine Learning Pipeline](#machine-learning-pipeline)
-- [API Documentation](#api-documentation)
-- [Installation Guide](#installation-guide)
+- [Project overview](#project-overview)
+- [Key features](#key-features)
+- [Technology stack](#technology-stack)
+- [Folder structure](#folder-structure)
 - [Screenshots](#screenshots)
-- [Future Improvements](#future-improvements)
-- [License](#license)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Environment variables](#environment-variables)
+- [Running locally](#running-locally)
+- [Running with Docker](#running-with-docker)
+- [API documentation](#api-documentation)
+- [Testing](#testing)
+- [CI/CD pipeline](#cicd-pipeline)
+- [Deployment guide](#deployment-guide)
+- [Roadmap](#roadmap)
 - [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Project Overview
+## Project overview
 
-RRPS is a full-stack **Self-Learning Forecaster** for restaurants. It combines machine learning predictions with operational planning (workforce, procurement, profitability) and a closed feedback loop where managers submit actual customer counts to retrain the model automatically.
+RRPS is a full-stack **Restaurant Resource Planning** system for multi-branch restaurants and SaaS operators. It combines classical ERP modules with an ML demand forecaster that learns from manager feedback.
 
-The system is designed as an enterprise-style analytics dashboard with eight functional modules, PostgreSQL persistence, and versioned ML models.
+| Audience | Value |
+|----------|--------|
+| Operators | POS, kitchen, floor, inventory, payroll |
+| Managers | Forecasts, BI insights, staff & stock plans |
+| Platform admins | Jobs, webhooks, health, backups, SaaS billing |
+| Developers | OpenAPI, Docker, GitHub Actions, CDK scaffolding |
 
----
-
-## Features
-
-| Module | Description |
-|--------|-------------|
-| **Dashboard** | Live KPIs: forecast, revenue, staff/inventory costs, model accuracy |
-| **Forecast** | ML customer prediction with 15+ input features and confidence score |
-| **Staff Planner** | Role-based workforce recommendations and cost breakdown |
-| **Inventory Planner** | Ingredient procurement planning with safety stock |
-| **Manager Feedback** | Actual vs predicted feedback triggering self-learning retraining |
-| **Model Analytics** | Production model metrics, version history, training trends |
-| **Prediction History** | Searchable forecast, feedback, and model history with export |
-| **Settings** | Theme, API health, dataset info |
-
-### Core capabilities
-
-- Real-time ML forecasting (Gradient Boosting / ensemble models)
-- Self-learning feedback loop with automatic model retraining
-- PostgreSQL persistence for plans, predictions, and dashboard snapshots
-- Model versioning (v1, v2, v3…) with production promotion
-- Responsive React dashboard with dark mode
-- CSV export on planner and history pages
+**Status:** Version **1.0.0** tagged. Business features are feature-complete for v1; current focus is production hardening and cloud cutover.
 
 ---
 
-## Technology Stack
+## Key features
 
-| Layer | Technologies |
-|-------|--------------|
-| **Frontend** | React 19, Vite 8, Tailwind CSS 4, React Query, Axios, Recharts, React Router |
-| **Backend** | FastAPI, SQLAlchemy, Pydantic, Uvicorn |
-| **Database** | PostgreSQL |
-| **ML** | scikit-learn, pandas, joblib, matplotlib |
-| **Tooling** | ESLint, pytest |
+- **ERP master data** — restaurants, branches, dining areas, tables, departments, documents
+- **Catalog & inventory** — products, suppliers, warehouses, PO → GRN, recipes, menu, transfers, alerts
+- **POS & operations** — tickets, payments, KDS, floor plan, merge/split tables
+- **CRM & HRMS** — loyalty, reservations, shifts, attendance, leave, payroll
+- **Analytics & BI** — executive dashboards, insights, alerts, assistant query
+- **Automation admin** — workflows, job scheduler, API keys, webhooks, audit
+- **Multi-tenant SaaS** — organizations, plans, invoices, onboarding, super-admin
+- **ML forecasting** — predict demand, retrain, version models, recommendations
+- **Platform ops** — health center, cache/queue monitors, backups, storage status
+- **Production baseline** — Redis, Celery, Docker Compose, CI lint/test/build, security middleware
 
 ---
 
-## Folder Structure
+## Technology stack
 
-```
+| Layer | Stack |
+|-------|--------|
+| Frontend | React 19, Vite 8, Tailwind CSS 4, TanStack Query, React Router 7, Recharts |
+| Backend | FastAPI, SQLAlchemy 2, Pydantic v2, Alembic, Uvicorn/Gunicorn |
+| Data | PostgreSQL 16, Redis 7 |
+| Jobs | Celery (worker + beat) |
+| ML | scikit-learn, pandas, joblib |
+| Edge | Nginx (Compose) / Application Load Balancer (AWS) |
+| Cloud | ECR, ECS Fargate, RDS, ElastiCache, S3, Secrets Manager, CloudWatch (target) |
+| IaC | AWS CDK (TypeScript) in `infrastructure/` |
+| CI/CD | GitHub Actions |
+
+---
+
+## Folder structure
+
+```text
 Restaurant-resource-planning-system/
-├── Backend/
-│   ├── app/
-│   │   ├── api/              # FastAPI route handlers
-│   │   ├── database/         # DB connection, init
-│   │   ├── feedback/         # Self-learning engine
-│   │   ├── ml/               # Training, evaluation, pipelines
-│   │   ├── models/           # SQLAlchemy ORM models
-│   │   ├── schemas/          # Pydantic request/response schemas
-│   │   ├── services/         # Business logic
-│   │   └── utils/            # Config, dependencies
-│   ├── dataset/              # Training CSV data
-│   ├── models/               # Serialized ML artifacts (.pkl, metadata)
-│   ├── tests/                # pytest suite
-│   └── run.py                # API entry point
-├── Frontend/
+├── Backend/                 # FastAPI app, Celery, Alembic, ML artifacts
+│   ├── app/                 # api, services, models, middleware, tasks
+│   ├── tests/
+│   ├── migrations/
+│   ├── Dockerfile
+│   └── Dockerfile.worker
+├── Frontend/                # React SPA
 │   ├── src/
-│   │   ├── components/       # UI modules (dashboard, forecast, staff, …)
-│   │   ├── context/          # Theme, toast providers
-│   │   ├── hooks/            # React Query hooks
-│   │   ├── layouts/          # Dashboard shell
-│   │   ├── pages/            # Route pages
-│   │   ├── services/         # Axios API clients
-│   │   └── utils/            # Formatters, form builders, chart data
-│   └── .env.example
+│   └── Dockerfile
+├── docs/                    # Enterprise documentation
+│   ├── architecture/        # Mermaid diagrams & flows
+│   ├── api/                 # REST reference + endpoint index
+│   ├── deployment/          # Compose + AWS
+│   ├── guides/              # Local, testing, CI/CD
+│   ├── security/
+│   ├── screenshots/
+│   └── archive/phase-reports/
+├── env/                     # Stage-specific *.env.example
+├── infra/                   # Local nginx / postgres / redis configs
+├── infrastructure/          # AWS CDK stacks
+├── scripts/                 # Doc/tooling helpers
+├── docker-compose.yml
+├── LICENSE
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── README.md
 ```
 
----
-
-## System Architecture
-
-```mermaid
-flowchart TB
-    subgraph Client["React Frontend (Vite)"]
-        UI[Dashboard UI]
-        RQ[React Query Cache]
-        UI --> RQ
-    end
-
-    subgraph API["FastAPI Backend :8001"]
-        ForecastAPI["/forecast/*"]
-        RecAPI["/recommendation/*"]
-        FeedbackAPI["/feedback/*"]
-        ModelAPI["/model/*"]
-        PersistAPI["/*/latest"]
-    end
-
-    subgraph Data["Data Layer"]
-        PG[(PostgreSQL)]
-        CSV[(Training CSV)]
-        PKL[(Model Artifacts)]
-    end
-
-    subgraph ML["ML Pipeline"]
-        Train[Train / Retrain]
-        Predict[Predict]
-        Version[Model Versioning]
-    end
-
-    RQ -->|Axios HTTP| API
-    ForecastAPI --> Predict
-    RecAPI --> PG
-    FeedbackAPI --> Train
-    FeedbackAPI --> PG
-    ModelAPI --> PKL
-    ModelAPI --> PG
-    PersistAPI --> PG
-    Train --> CSV
-    Train --> PKL
-    Predict --> PKL
-    Version --> PG
-    Version --> PKL
-```
-
-### Request flow (self-learning)
-
-1. Manager submits forecast via **POST /forecast/predict** → prediction stored in `prediction_history`
-2. System generates staff/inventory plans linked to prediction ID
-3. Manager submits **POST /feedback** with actual customers
-4. Feedback appends row to dataset and triggers **retraining**
-5. New model version promoted to production; accuracy metrics updated
-
----
-
-## Database Schema
-
-| Table | Purpose |
-|-------|---------|
-| `prediction_history` | ML predictions, actuals, errors, feedback metadata |
-| `staff_plan_records` | Persisted staff recommendations |
-| `inventory_plan_records` | Persisted inventory plans |
-| `dashboard_summaries` | Dashboard snapshot rows |
-| `model_versions` | Version registry with metrics and production flag |
-| `retraining_history` | Retraining audit trail |
-| `accuracy_history` | Accuracy tracking over time |
-| `users` | User accounts (optional auth) |
-
-**Key relationships:** `prediction_history` → staff/inventory/dashboard records via `prediction_id`.
-
----
-
-## Machine Learning Pipeline
-
-1. **Dataset** — `Backend/dataset/restaurant_data.csv` (10k+ rows, 15+ features)
-2. **Feature pipeline** — encoding, scaling via scikit-learn `Pipeline`
-3. **Model selection** — RandomForest, GradientBoosting, ExtraTrees comparison
-4. **Training** — best model saved with evaluation report + feature importance chart
-5. **Inference** — production model serves **POST /forecast/predict**
-6. **Feedback loop** — actual customers appended; model retrained on feedback
-7. **Versioning** — each retrain creates `vN` artifact; previous versions archived
-
-**Metrics tracked:** Accuracy, MAE, RMSE, R², MAPE.
-
----
-
-## API Documentation
-
-**Interactive docs:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
-
-### Forecast
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/forecast/predict` | Generate customer forecast |
-| GET | `/forecast/latest` | Latest saved forecast |
-| GET | `/forecast/model-info` | Model metadata |
-
-### Recommendations
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/recommendation/staff` | Staff plan |
-| POST | `/recommendation/inventory` | Inventory plan |
-| POST | `/recommendation/full-plan` | Full dashboard plan |
-| GET | `/staff/latest` | Latest staff plan |
-| GET | `/inventory/latest` | Latest inventory plan |
-| GET | `/dashboard/latest` | Latest dashboard snapshot |
-
-### Feedback & Learning
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/feedback` | Submit manager feedback (triggers retrain) |
-| GET | `/feedback/history` | Prediction + feedback history |
-
-### Model
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/model/current` | Production model metrics |
-| GET | `/model/versions` | All model versions |
-| GET | `/model/accuracy` | Accuracy dashboard |
-| POST | `/model/retrain` | Manual retrain |
-
----
-
-## Installation Guide
-
-### Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- PostgreSQL 14+
-
-### 1. Clone repository
-
-```bash
-git clone https://github.com/your-org/Restaurant-resource-planning-system.git
-cd Restaurant-resource-planning-system
-```
-
-### 2. Backend setup
-
-```bash
-cd Backend
-python -m venv venv
-```
-
-**Windows:**
-
-```powershell
-.\venv\Scripts\Activate.ps1
-```
-
-**macOS / Linux:**
-
-```bash
-source venv/bin/activate
-```
-
-```bash
-pip install -r requirements.txt
-```
-
-Create `Backend/.env`:
-
-```env
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/restaurant_rps
-API_HOST=127.0.0.1
-API_PORT=8001
-```
-
-Create database:
-
-```sql
-CREATE DATABASE restaurant_rps;
-```
-
-Start API:
-
-```bash
-python run.py
-```
-
-**Swagger UI:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
-
-### 3. Frontend setup
-
-```bash
-cd Frontend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-**App:** [http://localhost:5173](http://localhost:5173)
-
-### 4. Production build
-
-```bash
-cd Frontend
-npm run build
-npm run preview
-```
+> **Naming:** `infra/` = Compose runtime configs · `infrastructure/` = AWS CDK. Do not conflate.
 
 ---
 
 ## Screenshots
 
-> Add screenshots after deployment. Suggested captures:
->
-> 1. Dashboard — KPI cards and charts
-> 2. Forecast — prediction form and results
-> 3. Staff Planner — role table and charts
-> 4. Inventory Planner — ingredient table
-> 5. Manager Feedback — submission result panel
-> 6. Model Analytics — training history charts
-> 7. Prediction History — tabbed history view
+Add PNG captures under [`docs/screenshots/`](docs/screenshots/). Suggested:
 
-Store images in `docs/screenshots/` and link here.
+| Dashboard | POS | Forecast | Platform ops |
+|-----------|-----|----------|--------------|
+| `dashboard.png` | `pos.png` | `forecast.png` | `platform-ops.png` |
+
+See [docs/screenshots/README.md](docs/screenshots/README.md).
 
 ---
 
-## Future Improvements
+## Architecture
 
-- [x] JWT authentication and role-based access (Phases 3+)
-- [x] Multi-restaurant / multi-tenant SaaS (Phases 5–11)
-- [x] Docker, CI/CD, Redis, Celery, backups, observability (Phase 12)
-- [ ] Real-time WebSocket updates for dashboard KPIs
-- [ ] Email/Slack provider wiring for Celery email jobs
-- [ ] Mobile PWA with offline cache
-- [ ] Kubernetes manifests / Helm chart on top of Phase 12 images
-- [ ] Feature importance API endpoint for analytics page
-- [ ] Integration with live POS hardware for automatic actuals
-
-## Phase 12 quick start
-
-```bash
-docker compose up --build
-docker compose --profile migrate run --rm migrate
-# http://localhost/health/live  ·  http://localhost/docs
+```mermaid
+flowchart TB
+  Browser[React SPA] --> Edge[Nginx / ALB]
+  Edge -->|/api| API[FastAPI]
+  Edge -->|/| Browser
+  API --> PG[(PostgreSQL)]
+  API --> Redis[(Redis)]
+  API --> S3[(Object storage)]
+  Redis --> Worker[Celery Worker]
+  Redis --> Beat[Celery Beat]
+  Worker --> PG
+  Worker --> S3
 ```
 
-See `docs/PHASE12_PRODUCTION_DEPLOYMENT_REPORT.md` and `docs/DEPLOYMENT_GUIDE.md`.
+Detailed diagrams (auth, forecast, inventory, orders, jobs, AWS topology):
+
+**[docs/architecture/](docs/architecture/)**
 
 ---
 
-## License
+## Installation
 
-MIT (or your chosen license)
+### Prerequisites
+
+- Git
+- Docker Desktop / Engine 24+ (recommended), **or**
+- Python 3.12+, Node.js 22+, PostgreSQL 16, Redis 7
+
+### Clone
+
+```bash
+git clone https://github.com/Sudharsen27/Restaurant-Resource-Planning-System-AI.git
+cd Restaurant-Resource-Planning-System-AI
+```
+
+---
+
+## Environment variables
+
+Copy a template and edit:
+
+```bash
+cp env/development.env.example Backend/.env
+cp Frontend/.env.example Frontend/.env
+```
+
+| Area | Examples |
+|------|----------|
+| Core | `APP_ENV`, `SECRET_KEY`, `DATABASE_URL`, `CORS_ORIGINS` |
+| Redis/Celery | `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` |
+| Storage | `STORAGE_BACKEND`, `S3_BUCKET`, `AWS_REGION` |
+| Frontend | `VITE_API_BASE_URL=/api/v1` |
+
+Full reference: [docs/deployment/environment-variables.md](docs/deployment/environment-variables.md)
+
+---
+
+## Running locally
+
+See **[docs/guides/local-development.md](docs/guides/local-development.md)**.
+
+```bash
+# Backend
+cd Backend && pip install -r requirements.txt
+python scripts/migrate.py
+uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd Frontend && npm install && npm run dev
+```
+
+- API docs: http://localhost:8000/docs  
+- SPA (Vite): http://localhost:5173  
+
+---
+
+## Running with Docker
+
+```bash
+docker compose up --build -d
+docker compose --profile migrate run --rm migrate
+```
+
+| URL | Service |
+|-----|---------|
+| http://localhost | App (nginx) |
+| http://localhost/api/v1/health/live | Liveness |
+
+Guide: [docs/deployment/docker-compose.md](docs/deployment/docker-compose.md)
+
+---
+
+## API documentation
+
+| Resource | Link |
+|----------|------|
+| Docs hub | [docs/api/](docs/api/) |
+| Auth | [docs/api/auth.md](docs/api/auth.md) |
+| Full index (~293 routes) | [docs/api/ENDPOINT_INDEX.md](docs/api/ENDPOINT_INDEX.md) |
+| Swagger (runtime) | `/docs` |
+| ReDoc | `/redoc` |
+
+Authenticate with:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+---
+
+## Testing
+
+```bash
+# Backend
+cd Backend && pytest -q
+
+# Frontend
+cd Frontend && npm run lint && npm run build
+```
+
+Details: [docs/guides/testing.md](docs/guides/testing.md)
+
+---
+
+## CI/CD pipeline
+
+GitHub Actions:
+
+| Workflow | Purpose |
+|----------|---------|
+| [`ci.yml`](.github/workflows/ci.yml) | Backend tests, frontend lint/build, Docker builds |
+| [`deploy.yml`](.github/workflows/deploy.yml) | Tag/manual deploy (GHCR + hooks) |
+
+Guide: [docs/guides/cicd.md](docs/guides/cicd.md)
+
+---
+
+## Deployment guide
+
+| Target | Doc |
+|--------|-----|
+| Docker Compose | [docs/deployment/docker-compose.md](docs/deployment/docker-compose.md) |
+| AWS ECS Fargate | [docs/deployment/aws-ecs.md](docs/deployment/aws-ecs.md) |
+| RDS + ElastiCache | [docs/deployment/aws-data.md](docs/deployment/aws-data.md) |
+| HTTPS / ALB | [docs/deployment/https-networking.md](docs/deployment/https-networking.md) |
+| Production gate | [docs/PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) |
+
+---
+
+## Roadmap
+
+### 1.1.0 — Harden & cloud-complete
+
+- JWT on remaining public ML/legacy write APIs
+- Production config guards
+- Finish ECS/ALB/ECR CDK + deploy pipeline
+- Broader integration + E2E tests
+- README screenshots
+
+### 2.0.0 — Scale the platform
+
+- SSO/OIDC, stronger tenant isolation audits
+- Multi-region DR, WAF
+- Event-driven integrations at scale
+
+See [docs/REPOSITORY_AUDIT.md](docs/REPOSITORY_AUDIT.md) for scored audit notes.
 
 ---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Please read [CONTRIBUTING.md](CONTRIBUTING.md).  
+Security reports: [SECURITY.md](SECURITY.md).
 
 ---
 
-**Restaurant Resource Planning System** — Built with FastAPI, React, and scikit-learn.
+## License
+
+MIT © [Sundar Digital](https://www.sundardigital.in/) — see [LICENSE](LICENSE).
+
+---
+
+**RRPS v1.0.0** · Built by [Sundar Digital](https://www.sundardigital.in/) for restaurant operators and platform teams who need ERP depth with forecasting intelligence.
