@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 
 import { NetworkStack } from '../lib/network-stack';
 import { ComputeStack } from '../lib/compute-stack';
+import { DatabaseStack } from '../lib/database-stack';
 
 const app = new cdk.App();
 
@@ -20,6 +21,38 @@ new ComputeStack(app, 'RestaurantComputeStack', {
   },
   vpc: network.vpc,
 });
+
+new DatabaseStack(app, 'RestaurantDatabaseStack', {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+  vpc: network.vpc,
+});
+
+
+// #!/usr/bin/env node
+// import * as cdk from 'aws-cdk-lib';
+
+// import { NetworkStack } from '../lib/network-stack';
+// import { ComputeStack } from '../lib/compute-stack';
+
+// const app = new cdk.App();
+
+// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// });
+
+// new ComputeStack(app, 'RestaurantComputeStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
 
 
 // #!/usr/bin/env node
