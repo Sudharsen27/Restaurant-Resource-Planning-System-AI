@@ -9,11 +9,12 @@ export interface CacheStackProps extends cdk.StackProps {
 
 export class CacheStack extends cdk.Stack {
   public readonly redisEndpoint: string;
+  public readonly redisSecurityGroup: ec2.SecurityGroup;
 
   constructor(scope: Construct, id: string, props: CacheStackProps) {
     super(scope, id, props);
 
-    const redisSecurityGroup = new ec2.SecurityGroup(this, 'RedisSecurityGroup', {
+    this.redisSecurityGroup = new ec2.SecurityGroup(this, 'RedisSecurityGroup', {
       vpc: props.vpc,
       description: 'Security Group for Redis',
       allowAllOutbound: true,
@@ -30,7 +31,7 @@ export class CacheStack extends cdk.Stack {
       cacheNodeType: 'cache.t3.micro',
       numCacheNodes: 1,
       clusterName: 'restaurant-redis',
-      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+      vpcSecurityGroupIds: [this.redisSecurityGroup.securityGroupId],
       cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName!,
     });
 

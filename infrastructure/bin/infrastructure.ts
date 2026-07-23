@@ -8,195 +8,49 @@ import { CacheStack } from '../lib/cache-stack';
 
 const app = new cdk.App();
 
-/**
- * Network Stack
- */
-const network = new NetworkStack(app, 'RestaurantNetworkStack', {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
-});
+const env = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+};
 
 /**
- * Compute Stack
+ * Network Stack — VPC, public/private subnets, NAT
  */
-new ComputeStack(app, 'RestaurantComputeStack', {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+const network = new NetworkStack(app, 'RestaurantNetworkStack', { env });
+
+/**
+ * Database Stack — RDS PostgreSQL + Secrets Manager credentials
+ */
+const database = new DatabaseStack(app, 'RestaurantDatabaseStack', {
+  env,
   vpc: network.vpc,
 });
 
 /**
- * Database Stack
+ * Cache Stack — ElastiCache Redis
  */
-new DatabaseStack(app, 'RestaurantDatabaseStack', {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+const cache = new CacheStack(app, 'RestaurantCacheStack', {
+  env,
   vpc: network.vpc,
 });
 
 /**
- * Cache Stack (Redis)
+ * Compute Stack — ECS cluster, Fargate services, ALB, ECR, autoscaling
  */
-new CacheStack(app, 'RestaurantCacheStack', {
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+const compute = new ComputeStack(app, 'RestaurantComputeStack', {
+  env,
   vpc: network.vpc,
+  database: database.database,
+  databaseSecret: database.database.secret,
+  dbSecurityGroup: database.dbSecurityGroup,
+  redisEndpoint: cache.redisEndpoint,
+  redisSecurityGroup: cache.redisSecurityGroup,
+  imageTag: app.node.tryGetContext('imageTag') ?? 'latest',
 });
 
+// Ensure data plane exists before compute wires secrets / endpoints
+compute.addStackDependency(database);
+compute.addStackDependency(cache);
+compute.addStackDependency(network);
 
-// #!/usr/bin/env node
-// import * as cdk from 'aws-cdk-lib';
-
-// import { NetworkStack } from '../lib/network-stack';
-// import { ComputeStack } from '../lib/compute-stack';
-// import { DatabaseStack } from '../lib/database-stack';
-// import { CacheStack } from '../lib/cache-stack';
-
-// const app = new cdk.App();
-
-// /**
-//  * Network Stack
-//  */
-// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-// });
-
-// /**
-//  * Compute Stack
-//  */
-// new ComputeStack(app, 'RestaurantComputeStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-// /**
-//  * Database Stack
-//  */
-// new DatabaseStack(app, 'RestaurantDatabaseStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-// /**
-//  * Cache Stack (Redis)
-//  */
-// new CacheStack(app, 'RestaurantCacheStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-
-
-// #!/usr/bin/env node
-// import * as cdk from 'aws-cdk-lib';
-
-// import { NetworkStack } from '../lib/network-stack';
-// import { ComputeStack } from '../lib/compute-stack';
-// import { DatabaseStack } from '../lib/database-stack';
-
-// const app = new cdk.App();
-
-// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-// });
-
-// new ComputeStack(app, 'RestaurantComputeStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-// new DatabaseStack(app, 'RestaurantDatabaseStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-
-// #!/usr/bin/env node
-// import * as cdk from 'aws-cdk-lib';
-
-// import { NetworkStack } from '../lib/network-stack';
-// import { ComputeStack } from '../lib/compute-stack';
-
-// const app = new cdk.App();
-
-// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-// });
-
-// new ComputeStack(app, 'RestaurantComputeStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-//   vpc: network.vpc,
-// });
-
-
-// #!/usr/bin/env node
-// import * as cdk from 'aws-cdk-lib';
-// import { NetworkStack } from '../lib/network-stack';
-
-// const app = new cdk.App();
-
-// new NetworkStack(app, 'RestaurantNetworkStack', {
-//   env: {
-//     account: process.env.CDK_DEFAULT_ACCOUNT,
-//     region: process.env.CDK_DEFAULT_REGION,
-//   },
-// });
-
-
-// #!/usr/bin/env node
-// import * as cdk from 'aws-cdk-lib/core';
-// import { InfrastructureStack } from '../lib/infrastructure-stack';
-
-// const app = new cdk.App();
-// new InfrastructureStack(app, 'InfrastructureStack', {
-//   /* If you don't specify 'env', this stack will be environment-agnostic.
-//    * Account/Region-dependent features and context lookups will not work,
-//    * but a single synthesized template can be deployed anywhere. */
-
-//   /* Uncomment the next line to specialize this stack for the AWS Account
-//    * and Region that are implied by the current CLI configuration. */
-//   // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-
-//   /* Uncomment the next line if you know exactly what Account and Region you
-//    * want to deploy the stack to. */
-//   // env: { account: '123456789012', region: 'us-east-1' },
-
-//   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-// });
-
-
+app.synth();
