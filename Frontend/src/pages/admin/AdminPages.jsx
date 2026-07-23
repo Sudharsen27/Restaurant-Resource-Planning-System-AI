@@ -29,7 +29,6 @@ import {
   runJobNow,
   saveFileAsset,
   saveIntegration,
-  saveJob,
   saveReportSchedule,
   saveSetting,
   saveWorkflow,
@@ -499,12 +498,14 @@ export function ApiManagementPage() {
     onSuccess: () => qClient.invalidateQueries({ queryKey: ['admin-webhooks', restaurant_id] }),
   })
 
-  const keyRows = asData(keysQ.data) || []
-  const hookRows = asData(hooksQ.data) || []
-  const rows = useMemo(
-    () => [...keyRows.map((r) => ({ type: 'API_KEY', ...r })), ...hookRows.map((r) => ({ type: 'WEBHOOK', ...r }))],
-    [keyRows, hookRows],
-  )
+  const rows = useMemo(() => {
+    const keyRows = asData(keysQ.data) || []
+    const hookRows = asData(hooksQ.data) || []
+    return [
+      ...keyRows.map((r) => ({ type: 'API_KEY', ...r })),
+      ...hookRows.map((r) => ({ type: 'WEBHOOK', ...r })),
+    ]
+  }, [keysQ.data, hooksQ.data])
   return (
     <EntityListPage
       title="API Management"

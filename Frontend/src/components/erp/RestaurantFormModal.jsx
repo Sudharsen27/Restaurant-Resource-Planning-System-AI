@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import AppModal from '../modals/AppModal'
 import { Input, Textarea, Switch } from '../forms/FormControls'
 
@@ -81,14 +81,18 @@ export default function RestaurantFormModal({
   onClose,
   onSubmit,
 }) {
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(() => toForm(initial))
   const [error, setError] = useState('')
+  const [resetKey, setResetKey] = useState({ open: false, initial })
 
-  useEffect(() => {
-    if (!open) return
-    setForm(toForm(initial))
-    setError('')
-  }, [open, initial])
+  // Reset form when the modal opens or the edited row changes (render-time adjust; no effect).
+  if (open !== resetKey.open || (open && initial !== resetKey.initial)) {
+    setResetKey({ open, initial })
+    if (open) {
+      setForm(toForm(initial))
+      setError('')
+    }
+  }
 
   function setField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))

@@ -74,13 +74,6 @@ const RESERVATION_STATUSES = [
   { value: 'CANCELLED', label: 'Cancel' },
 ]
 
-const MEMBERSHIP_LEVELS = [
-  { value: 'BRONZE', label: 'Bronze' },
-  { value: 'SILVER', label: 'Silver' },
-  { value: 'GOLD', label: 'Gold' },
-  { value: 'PLATINUM', label: 'Platinum' },
-]
-
 const SHIFT_TYPES = [
   { value: 'MORNING', label: 'Morning' },
   { value: 'AFTERNOON', label: 'Afternoon' },

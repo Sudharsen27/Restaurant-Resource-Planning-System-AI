@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
@@ -32,20 +32,23 @@ function asData(res) {
 
 function useSelectedOrgId(orgs) {
   const [orgId, setOrgId] = useState(() => localStorage.getItem('rrps-saas-org') || '')
-  useEffect(() => {
-    if (!orgs?.length) return
+  const resolvedOrgId = useMemo(() => {
+    if (!orgs?.length) return orgId
     const exists = orgs.some((o) => o.id === orgId)
-    if (!orgId || !exists) {
-      const next = orgs[0].id
-      setOrgId(next)
-      localStorage.setItem('rrps-saas-org', next)
-    }
+    if (!orgId || !exists) return orgs[0].id
+    return orgId
   }, [orgs, orgId])
+
+  useEffect(() => {
+    if (!resolvedOrgId) return
+    localStorage.setItem('rrps-saas-org', resolvedOrgId)
+  }, [resolvedOrgId])
+
   const select = (id) => {
     setOrgId(id)
     localStorage.setItem('rrps-saas-org', id)
   }
-  return [orgId, select]
+  return [resolvedOrgId, select]
 }
 
 function Pill({ label, value }) {

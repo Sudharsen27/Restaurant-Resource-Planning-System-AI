@@ -19,22 +19,25 @@ export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const emailRef = useRef(null)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem('rrps_remember_email') || ''
+    } catch {
+      return ''
+    }
+  })
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(true)
+  const [remember, setRemember] = useState(() => {
+    try {
+      return Boolean(localStorage.getItem('rrps_remember_email'))
+    } catch {
+      return true
+    }
+  })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('rrps_remember_email')
-      if (saved) {
-        setEmail(saved)
-        setRemember(true)
-      }
-    } catch {
-      /* ignore */
-    }
     emailRef.current?.focus()
   }, [])
 

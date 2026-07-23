@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { listRestaurants } from '../services/restaurantService'
 import { listBranches } from '../services/branchService'
@@ -13,7 +13,7 @@ export function OrgProvider({ children }) {
     staleTime: 60_000,
   })
 
-  const restaurants = restaurantRes || []
+  const restaurants = useMemo(() => restaurantRes || [], [restaurantRes])
 
   const [restaurantId, setRestaurantId] = useState(() => {
     try {
@@ -30,64 +30,54 @@ export function OrgProvider({ children }) {
     }
   })
 
-  useEffect(() => {
-    if (!restaurants.length) return
-    const exists = restaurants.some((r) => r.id === restaurantId)
-    if (!restaurantId || !exists) {
-      const nextId = restaurants[0].id
-      setRestaurantId(nextId)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ restaurantId: nextId, branchId: null }))
-    }
-  }, [restaurants, restaurantId])
+  const restaurant = useMemo(
+    () => restaurants.find((r) => r.id === restaurantId) || restaurants[0] || null,
+    [restaurants, restaurantId],
+  )
+  const resolvedRestaurantId = restaurant?.id ?? null
 
   const { data: branchRes, isFetching: branchesFetching } = useQuery({
-    queryKey: ['branches', 'org-switcher', restaurantId],
+    queryKey: ['branches', 'org-switcher', resolvedRestaurantId],
     queryFn: async () =>
-      (await listBranches({ restaurant_id: restaurantId, active_only: true })).data || [],
-    enabled: Boolean(restaurantId),
+      (await listBranches({ restaurant_id: resolvedRestaurantId, active_only: true })).data || [],
+    enabled: Boolean(resolvedRestaurantId),
     staleTime: 0,
     refetchOnMount: 'always',
   })
 
-  const branches = branchRes || []
-  const branchesLoading = (branchRes === undefined || branchesFetching) && Boolean(restaurantId)
+  const branches = useMemo(() => branchRes || [], [branchRes])
+  const branchesLoading = (branchRes === undefined || branchesFetching) && Boolean(resolvedRestaurantId)
+
+  const branch = useMemo(() => {
+    if (branchRes === undefined) return null
+    if (!branches.length) return null
+    return branches.find((b) => b.id === branchId) || branches[0] || null
+  }, [branches, branchId, branchRes])
 
   useEffect(() => {
-    if (branchRes === undefined) return
-    if (!branches.length) {
-      if (branchId) {
-        setBranchId(null)
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ restaurantId, branchId: null }),
-        )
-      }
-      return
-    }
-    const exists = branches.some((b) => b.id === branchId)
-    if (!branchId || !exists) {
-      const nextId = branches[0].id
-      setBranchId(nextId)
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ restaurantId, branchId: nextId }),
-      )
-    }
-  }, [branches, branchId, restaurantId, branchRes])
+    if (!resolvedRestaurantId || branchRes === undefined) return
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ restaurantId: resolvedRestaurantId, branchId: branch?.id ?? null }),
+    )
+  }, [resolvedRestaurantId, branch?.id, branchRes])
 
-  const restaurant = restaurants.find((r) => r.id === restaurantId) || restaurants[0] || null
-  const branch = branches.find((b) => b.id === branchId) || branches[0] || null
-
-  const selectRestaurant = (id) => {
+  const selectRestaurant = useCallback((id) => {
     setRestaurantId(id)
     setBranchId(null)
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ restaurantId: id, branchId: null }))
-  }
+  }, [])
 
-  const selectBranch = (id) => {
-    setBranchId(id)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ restaurantId, branchId: id }))
-  }
+  const selectBranch = useCallback(
+    (id) => {
+      setBranchId(id)
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ restaurantId: resolvedRestaurantId, branchId: id }),
+      )
+    },
+    [resolvedRestaurantId],
+  )
 
   const value = useMemo(
     () => ({
@@ -95,13 +85,13 @@ export function OrgProvider({ children }) {
       branches,
       restaurant,
       branch,
-      restaurantId: restaurant?.id,
-      branchId: branch?.id,
+      restaurantId: resolvedRestaurantId,
+      branchId: branch?.id ?? null,
       branchesLoading,
       selectRestaurant,
       selectBranch,
     }),
-    [restaurants, branches, restaurant, branch, branchesLoading],
+    [restaurants, branches, restaurant, branch, resolvedRestaurantId, branchesLoading, selectRestaurant, selectBranch],
   )
 
   return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>

@@ -7,8 +7,6 @@ import {
   ChefHat,
   ClipboardList,
   Package,
-  ShoppingCart,
-  Truck,
   UtensilsCrossed,
 } from 'lucide-react'
 import EntityListPage from '../../components/pages/EntityListPage'

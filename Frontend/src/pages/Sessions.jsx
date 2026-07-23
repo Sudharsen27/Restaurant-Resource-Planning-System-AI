@@ -23,8 +23,21 @@ export default function Sessions() {
   }, [error])
 
   useEffect(() => {
-    load()
-  }, [load])
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await listSessions()
+        if (!cancelled) setSessions(res?.data || [])
+      } catch (err) {
+        if (!cancelled) error(err.message || 'Failed to load sessions')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [error])
 
   async function onRevoke(id) {
     try {

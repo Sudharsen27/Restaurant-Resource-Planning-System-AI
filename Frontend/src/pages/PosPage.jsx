@@ -175,15 +175,22 @@ export default function PosPage() {
     )
   }
 
+  // Prefer an available table so dine-in is one click less (derive; no effect setState)
+  const resolvedTableId = useMemo(() => {
+    if (orderType !== 'DINE_IN') return tableId
+    if (tableId) return tableId
+    return tables.find((t) => t.status === 'AVAILABLE')?.id || ''
+  }, [orderType, tableId, tables])
+
   const placeMutation = useMutation({
     mutationFn: async ({ andPay }) => {
       if (!branch?.id) throw new Error('Select a branch')
       if (!cart.length) throw new Error('Add at least one item to the ticket')
-      if (orderType === 'DINE_IN' && !tableId) throw new Error('Select a table for dine-in')
+      if (orderType === 'DINE_IN' && !resolvedTableId) throw new Error('Select a table for dine-in')
       const payload = {
         branch_id: branch.id,
         customer_id: customerId || null,
-        table_id: orderType === 'DINE_IN' ? tableId || null : null,
+        table_id: orderType === 'DINE_IN' ? resolvedTableId || null : null,
         order_type: orderType,
         status: 'CONFIRMED',
         guest_count: Number(guestCount) || 1,
@@ -258,22 +265,15 @@ export default function PosPage() {
     onError: (err) => toastError(err.message || 'Payment failed'),
   })
 
-  // Prefer an available table so dine-in is one click less
-  useEffect(() => {
-    if (orderType !== 'DINE_IN' || tableId || !tables.length) return
-    const free = tables.find((t) => t.status === 'AVAILABLE')
-    if (free) setTableId(free.id)
-  }, [orderType, tables, tableId])
-
   const canPlace =
     cart.length > 0 &&
     Boolean(branch?.id) &&
-    (orderType !== 'DINE_IN' || Boolean(tableId)) &&
+    (orderType !== 'DINE_IN' || Boolean(resolvedTableId)) &&
     !placeMutation.isPending
 
   const blockReason = !cart.length
     ? 'Add menu items to the ticket first'
-    : orderType === 'DINE_IN' && !tableId
+    : orderType === 'DINE_IN' && !resolvedTableId
       ? 'Select a table for dine-in'
       : null
 
@@ -451,12 +451,12 @@ export default function PosPage() {
             {orderType === 'DINE_IN' && (
               <Select
                 label="Table"
-                value={tableId}
+                value={resolvedTableId}
                 onChange={(e) => setTableId(e.target.value)}
                 options={[
                   { value: '', label: 'Select table…' },
                   ...tables
-                    .filter((t) => t.status === 'AVAILABLE' || t.id === tableId)
+                    .filter((t) => t.status === 'AVAILABLE' || t.id === resolvedTableId)
                     .map((t) => ({
                       value: t.id,
                       label: `${t.table_number} · ${t.status} · ${t.capacity}p`,
