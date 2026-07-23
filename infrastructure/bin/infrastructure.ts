@@ -4,9 +4,13 @@ import * as cdk from 'aws-cdk-lib';
 import { NetworkStack } from '../lib/network-stack';
 import { ComputeStack } from '../lib/compute-stack';
 import { DatabaseStack } from '../lib/database-stack';
+import { CacheStack } from '../lib/cache-stack';
 
 const app = new cdk.App();
 
+/**
+ * Network Stack
+ */
 const network = new NetworkStack(app, 'RestaurantNetworkStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -14,6 +18,9 @@ const network = new NetworkStack(app, 'RestaurantNetworkStack', {
   },
 });
 
+/**
+ * Compute Stack
+ */
 new ComputeStack(app, 'RestaurantComputeStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -22,6 +29,9 @@ new ComputeStack(app, 'RestaurantComputeStack', {
   vpc: network.vpc,
 });
 
+/**
+ * Database Stack
+ */
 new DatabaseStack(app, 'RestaurantDatabaseStack', {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -29,6 +39,105 @@ new DatabaseStack(app, 'RestaurantDatabaseStack', {
   },
   vpc: network.vpc,
 });
+
+/**
+ * Cache Stack (Redis)
+ */
+new CacheStack(app, 'RestaurantCacheStack', {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+  vpc: network.vpc,
+});
+
+
+// #!/usr/bin/env node
+// import * as cdk from 'aws-cdk-lib';
+
+// import { NetworkStack } from '../lib/network-stack';
+// import { ComputeStack } from '../lib/compute-stack';
+// import { DatabaseStack } from '../lib/database-stack';
+// import { CacheStack } from '../lib/cache-stack';
+
+// const app = new cdk.App();
+
+// /**
+//  * Network Stack
+//  */
+// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// });
+
+// /**
+//  * Compute Stack
+//  */
+// new ComputeStack(app, 'RestaurantComputeStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
+
+// /**
+//  * Database Stack
+//  */
+// new DatabaseStack(app, 'RestaurantDatabaseStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
+
+// /**
+//  * Cache Stack (Redis)
+//  */
+// new CacheStack(app, 'RestaurantCacheStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
+
+
+
+// #!/usr/bin/env node
+// import * as cdk from 'aws-cdk-lib';
+
+// import { NetworkStack } from '../lib/network-stack';
+// import { ComputeStack } from '../lib/compute-stack';
+// import { DatabaseStack } from '../lib/database-stack';
+
+// const app = new cdk.App();
+
+// const network = new NetworkStack(app, 'RestaurantNetworkStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+// });
+
+// new ComputeStack(app, 'RestaurantComputeStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
+
+// new DatabaseStack(app, 'RestaurantDatabaseStack', {
+//   env: {
+//     account: process.env.CDK_DEFAULT_ACCOUNT,
+//     region: process.env.CDK_DEFAULT_REGION,
+//   },
+//   vpc: network.vpc,
+// });
 
 
 // #!/usr/bin/env node
