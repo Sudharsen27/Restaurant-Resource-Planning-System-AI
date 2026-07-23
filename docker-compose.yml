@@ -1,0 +1,211 @@
+# Restaurant ERP — local development / staging-like stack
+# Usage: docker compose up --build
+name: restaurant-erp
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-restaurant_rps}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-restaurant_rps}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp_net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      # Host port only — containers still reach redis:6379 on the compose network.
+      # Default 6380 avoids clash with other local Redis (e.g. nexoracrm).
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+      - ./infra/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - erp_net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    env_file:
+      - ./env/development.env.example
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-restaurant_rps}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CORS_ORIGINS: http://localhost,http://localhost:80,http://127.0.0.1,http://localhost:5173
+      RATE_LIMIT_ENABLED: "true"
+      STORAGE_BACKEND: local
+      LOG_FORMAT: json
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-openssl-rand-hex-32}
+      MPLCONFIGDIR: /tmp/matplotlib
+      HOME: /tmp
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+      - backend_backups:/app/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/live"]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
+    networks:
+      - erp_net
+
+  worker:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    env_file:
+      - ./env/development.env.example
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-restaurant_rps}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-openssl-rand-hex-32}
+      STORAGE_BACKEND: local
+      LOG_FORMAT: json
+      MPLCONFIGDIR: /tmp/matplotlib
+      HOME: /tmp
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - erp_net
+
+  scheduler:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "-A",
+        "app.celery_app.celery",
+        "beat",
+        "--loglevel=INFO",
+        "--schedule=/tmp/celerybeat-schedule",
+      ]
+    env_file:
+      - ./env/development.env.example
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-restaurant_rps}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-openssl-rand-hex-32}
+      LOG_FORMAT: json
+      MPLCONFIGDIR: /tmp/matplotlib
+      HOME: /tmp
+    depends_on:
+      redis:
+        condition: service_healthy
+      worker:
+        condition: service_started
+    networks:
+      - erp_net
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_API_TIMEOUT_MS: "120000"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - erp_net
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health/live"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp_net
+
+  migrate:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    profiles: ["migrate"]
+    env_file:
+      - ./env/development.env.example
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-restaurant_rps}
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me-openssl-rand-hex-32}
+      USE_ALEMBIC: "true"
+      ALLOW_CREATE_ALL: "false"
+    command: ["python", "scripts/migrate.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - erp_net
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  backend_logs:
+  backend_backups:
+
+networks:
+  erp_net:
+    driver: bridge

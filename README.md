@@ -325,15 +325,25 @@ Store images in `docs/screenshots/` and link here.
 
 ## Future Improvements
 
-- [ ] JWT authentication and role-based access (manager vs staff)
-- [ ] Multi-restaurant / multi-location support
+- [x] JWT authentication and role-based access (Phases 3+)
+- [x] Multi-restaurant / multi-tenant SaaS (Phases 5–11)
+- [x] Docker, CI/CD, Redis, Celery, backups, observability (Phase 12)
 - [ ] Real-time WebSocket updates for dashboard KPIs
-- [ ] Email/Slack alerts for high forecast error
+- [ ] Email/Slack provider wiring for Celery email jobs
 - [ ] Mobile PWA with offline cache
-- [ ] Kubernetes deployment with CI/CD
+- [ ] Kubernetes manifests / Helm chart on top of Phase 12 images
 - [ ] Feature importance API endpoint for analytics page
-- [ ] Batch forecast scheduling (cron-based)
-- [ ] Integration with POS systems for automatic actuals
+- [ ] Integration with live POS hardware for automatic actuals
+
+## Phase 12 quick start
+
+```bash
+docker compose up --build
+docker compose --profile migrate run --rm migrate
+# http://localhost/health/live  ·  http://localhost/docs
+```
+
+See `docs/PHASE12_PRODUCTION_DEPLOYMENT_REPORT.md` and `docs/DEPLOYMENT_GUIDE.md`.
 
 ---
 

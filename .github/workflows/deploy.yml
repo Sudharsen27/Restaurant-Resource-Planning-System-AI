@@ -1,0 +1,130 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build-and-push:
+    name: Build & push images
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: |
+          echo "sha=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        if: ${{ secrets.GITHUB_TOKEN != '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          file: ./Backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:${{ steps.meta.outputs.sha }}
+            ghcr.io/${{ github.repository }}/backend:latest
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Build worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          file: ./Backend/Dockerfile.worker
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ghcr.io/${{ github.repository }}/worker:${{ steps.meta.outputs.sha }}
+            ghcr.io/${{ github.repository }}/worker:latest
+
+      - name: Build frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend
+          file: ./Frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:${{ steps.meta.outputs.sha }}
+            ghcr.io/${{ github.repository }}/frontend:latest
+          build-args: |
+            VITE_API_BASE_URL=/api/v1
+
+  migrate:
+    name: Run Alembic migrations
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend deps
+        working-directory: Backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Alembic upgrade (safe)
+        working-directory: Backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          APP_ENV: ${{ github.event.inputs.environment || 'staging' }}
+          USE_ALEMBIC: "true"
+        run: |
+          echo "Running safe schema migrate (empty-DB bootstrap + upgrade)"
+          python scripts/migrate.py
+
+  deploy:
+    name: Deploy rolling update
+    runs-on: ubuntu-latest
+    needs: migrate
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Deploy hook
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          IMAGE_SHA: ${{ github.sha }}
+          TARGET_ENV: ${{ github.event.inputs.environment || 'staging' }}
+        run: |
+          echo "Zero-downtime deploy: pull new images, drain old workers, roll API."
+          if [ -n "$DEPLOY_WEBHOOK_URL" ]; then
+            curl -fsS -X POST "$DEPLOY_WEBHOOK_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"sha\":\"$IMAGE_SHA\",\"environment\":\"$TARGET_ENV\"}"
+          else
+            echo "DEPLOY_WEBHOOK_URL not set — images published; wire orchestrator (ECS/AKS/GKE/DO/K8s)."
+          fi

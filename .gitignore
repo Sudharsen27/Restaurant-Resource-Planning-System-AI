@@ -1,10 +1,24 @@
-# Dependencies
-node_modules/
-dist/
-
 # Environment
 .env
 .env.local
+.env.*.local
+!.env.example
+!env/*.env.example
+
+# Secrets / local overlays
+**/secrets/
+*.pem
+*.key
+
+# Backups & runtime
+Backend/backups/
+Backend/logs/
+Backend/uploads_test/
+backups/
+
+# Dependencies
+node_modules/
+dist/
 
 # Python
 __pycache__/
@@ -27,6 +41,10 @@ Thumbs.db
 # Test / cache
 .pytest_cache/
 Backend/.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+coverage/
+htmlcov/
 
 # Local verification DB
 verify_test.db
