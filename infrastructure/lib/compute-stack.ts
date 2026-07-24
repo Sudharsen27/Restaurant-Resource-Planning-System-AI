@@ -15,7 +15,7 @@ export interface ComputeStackProps extends cdk.StackProps {
   database?: rds.IDatabaseInstance;
   /** RDS credentials secret (Secrets Manager). */
   databaseSecret?: secretsmanager.ISecret;
-  /** RDS security group — ingress from ECS is added here (cross-stack). */
+  /** RDS security group - ingress from ECS is added here (cross-stack). */
   dbSecurityGroup?: ec2.ISecurityGroup;
   /** ElastiCache primary endpoint hostname. */
   redisEndpoint?: string;
@@ -64,7 +64,7 @@ export class ComputeStack extends cdk.Stack {
     });
 
     // -------------------------------------------------------------------------
-    // ECR repositories (pre-existing — import, do not create)
+    // ECR repositories (pre-existing - import, do not create)
     // -------------------------------------------------------------------------
     const backendRepo = ecr.Repository.fromRepositoryName(
       this,
@@ -106,7 +106,7 @@ export class ComputeStack extends cdk.Stack {
     // -------------------------------------------------------------------------
     const albSg = new ec2.SecurityGroup(this, 'AlbSecurityGroup', {
       vpc: props.vpc,
-      description: 'ALB — public HTTP',
+      description: 'ALB - public HTTP',
       allowAllOutbound: true,
     });
     albSg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'HTTP from Internet');
@@ -171,7 +171,7 @@ export class ComputeStack extends cdk.Stack {
     }
 
     // -------------------------------------------------------------------------
-    // IAM — task execution + task roles
+    // IAM - task execution + task roles
     // -------------------------------------------------------------------------
     const executionRole = new iam.Role(this, 'EcsTaskExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
