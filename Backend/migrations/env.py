@@ -25,7 +25,11 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Prefer runtime DATABASE_URL over alembic.ini placeholder
-config.set_main_option("sqlalchemy.url", settings.database_url)
+database_url = settings.database_url
+if settings.is_production and "sslmode=" not in database_url:
+    separator = "&" if "?" in database_url else "?"
+    database_url = f"{database_url}{separator}sslmode=require"
+config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata
 

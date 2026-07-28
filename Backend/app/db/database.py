@@ -1,5 +1,7 @@
 """Database engine configuration with production-grade pooling."""
 
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 
@@ -9,9 +11,22 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _normalized_database_url(url: str) -> str:
+    """Normalize DB URL for production managed Postgres providers."""
+    if not settings.is_production:
+        return url
+    if "sslmode=" in url:
+        return url
+
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query["sslmode"] = "require"
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+
+
 def create_db_engine() -> Engine:
     engine = create_engine(
-        settings.database_url,
+        _normalized_database_url(settings.database_url),
         pool_pre_ping=True,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_max_overflow,

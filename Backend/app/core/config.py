@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.constants import (
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 
     # Database
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/restaurant_rps"
+    database_url: str = "postgresql://APP_USER:CHANGE_ME@db.example.com:5432/restaurant_rps"
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_recycle: int = 3600
@@ -145,6 +145,20 @@ class Settings(BaseSettings):
         if not value.startswith("postgresql"):
             raise ValueError("DATABASE_URL must use the postgresql:// scheme.")
         return value
+
+    @model_validator(mode="after")
+    def production_safety_defaults(self) -> "Settings":
+        # In production-like environments, default DEBUG to false behavior even if unset.
+        if self.is_production and self.debug:
+            self.debug = False
+
+        # Ensure TLS requirement is present for managed Postgres providers when omitted.
+        # Keeps compatibility for AWS RDS and Aiven while avoiding hardcoded hosts/creds.
+        if self.is_production and "sslmode=" not in self.database_url:
+            joiner = "&" if "?" in self.database_url else "?"
+            self.database_url = f"{self.database_url}{joiner}sslmode=require"
+
+        return self
 
     @field_validator("log_level")
     @classmethod
