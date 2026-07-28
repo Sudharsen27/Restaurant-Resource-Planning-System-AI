@@ -27,7 +27,6 @@ from app.middleware import (
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     from app.ml.model_manager import ModelManager
-    from app.ml.train import train_forecast_model
 
     setup_logging(level=settings.log_level, log_format=settings.log_format)
 
@@ -50,10 +49,27 @@ async def lifespan(_app: FastAPI):
     seed_placeholder_data()
 
     from app.database.init_db import bootstrap_production_model_version
+    from app.core.logging import get_logger
 
+    logger = get_logger(__name__)
     manager = ModelManager()
-    if not manager.models_exist():
+
+    # Auto-training is opt-in and always disabled in production (OOM on small hosts).
+    if settings.should_auto_train_on_startup and not manager.models_exist():
+        from app.ml.train import train_forecast_model
+
+        logger.info(
+            "ENABLE_AUTO_TRAINING=true — training missing forecast model on startup",
+            extra={"event": "auto_train_startup"},
+        )
         train_forecast_model()
+    elif not manager.models_exist():
+        logger.warning(
+            "Forecast model artifacts missing — skipping auto-train "
+            "(set ENABLE_AUTO_TRAINING=true for local/dev only, or call POST /forecast/retrain)",
+            extra={"event": "auto_train_skipped"},
+        )
+
     bootstrap_production_model_version()
 
     yield

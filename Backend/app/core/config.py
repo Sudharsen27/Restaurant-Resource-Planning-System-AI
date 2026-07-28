@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     seed_enterprise_data: bool = True
     seed_legacy_forecasts: bool = True
 
+    # ML — never auto-train on API boot in production (OOM risk on small hosts).
+    # Manual: POST /forecast/retrain or python -c "from app.ml.train import train_forecast_model; ..."
+    enable_auto_training: bool = False
+
     # Paths (override in .env for deployments)
     models_dir: Path = Field(default_factory=lambda: DEFAULT_MODELS_DIR)
     dataset_csv_path: Path = Field(default_factory=lambda: DEFAULT_DATASET_CSV)
@@ -152,6 +156,10 @@ class Settings(BaseSettings):
         if self.is_production and self.debug:
             self.debug = False
 
+        # Never auto-train during API startup in production (Render Free / small instances).
+        if self.is_production:
+            self.enable_auto_training = False
+
         # Ensure TLS requirement is present for managed Postgres providers when omitted.
         # Keeps compatibility for AWS RDS and Aiven while avoiding hardcoded hosts/creds.
         if self.is_production and "sslmode=" not in self.database_url:
@@ -159,6 +167,11 @@ class Settings(BaseSettings):
             self.database_url = f"{self.database_url}{joiner}sslmode=require"
 
         return self
+
+    @property
+    def should_auto_train_on_startup(self) -> bool:
+        """True only when explicitly enabled and not running in production."""
+        return bool(self.enable_auto_training) and not self.is_production
 
     @field_validator("log_level")
     @classmethod
