@@ -69,8 +69,37 @@ def generate_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def security_headers() -> dict[str, str]:
-    """Standard security headers for responses (CSP / HSTS optional)."""
+# FastAPI docs UIs load Swagger/ReDoc assets from jsDelivr; keep this CSP scoped to docs only.
+_DOCS_PATH_PREFIXES = ("/docs", "/redoc", "/openapi.json")
+
+_DOCS_CSP = (
+    "default-src 'self'; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data:; "
+    "font-src 'self' https://cdn.jsdelivr.net; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'"
+)
+
+
+def _is_docs_path(path: str) -> bool:
+    return (
+        path == "/openapi.json"
+        or path.startswith("/docs")
+        or path.startswith("/redoc")
+    )
+
+
+def security_headers(path: str | None = None) -> dict[str, str]:
+    """Standard security headers for responses (CSP / HSTS optional).
+
+    When ``path`` is a FastAPI docs endpoint (/docs, /redoc, /openapi.json),
+    apply a docs-only CSP that allows Swagger UI CDN assets. All other routes
+    keep the strict global CSP from settings.
+    """
     headers = {
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
@@ -78,9 +107,13 @@ def security_headers() -> dict[str, str]:
         "X-XSS-Protection": "1; mode=block",
         "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     }
-    csp = settings.effective_csp
-    if csp:
-        headers["Content-Security-Policy"] = csp
+    if path and _is_docs_path(path):
+        if settings.csp_enabled:
+            headers["Content-Security-Policy"] = _DOCS_CSP
+    else:
+        csp = settings.effective_csp
+        if csp:
+            headers["Content-Security-Policy"] = csp
     if settings.hsts_enabled or (settings.is_production and settings.https_redirect_enabled):
         headers["Strict-Transport-Security"] = (
             f"max-age={settings.hsts_max_age_seconds}; includeSubDomains; preload"

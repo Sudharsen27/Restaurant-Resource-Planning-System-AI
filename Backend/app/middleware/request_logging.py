@@ -136,7 +136,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Attach standard security headers when enabled via settings."""
+    """Attach standard security headers when enabled via settings.
+
+    Docs endpoints (/docs, /redoc, /openapi.json) receive a scoped CSP that
+    allows Swagger UI CDN assets; API routes keep the strict global CSP.
+    """
 
     async def dispatch(
         self,
@@ -147,8 +151,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             if settings.security_headers_enabled:
-                for key, value in security_headers().items():
-                    response.headers.setdefault(key, value)
+                for key, value in security_headers(path=request.url.path).items():
+                    # Docs need their CSP to win over any prior default.
+                    if key == "Content-Security-Policy" and request.url.path.startswith(
+                        ("/docs", "/redoc", "/openapi.json")
+                    ):
+                        response.headers[key] = value
+                    else:
+                        response.headers.setdefault(key, value)
             _mw_log("SecurityHeaders", request, "exited")
             return response
         except Exception as exc:
