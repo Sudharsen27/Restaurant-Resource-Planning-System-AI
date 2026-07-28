@@ -78,8 +78,14 @@ def bootstrap_fresh_schema() -> None:
     import app.models  # noqa: F401 — register metadata
     from app.db.base import Base
 
+    if settings.is_production:
+        raise RuntimeError(
+            "Fresh-schema bootstrap via create_all is disabled in production. "
+            "Use Alembic migrations only."
+        )
+
     logger.warning(
-        "Empty database detected — bootstrapping schema via create_all + alembic stamp head",
+        "Empty database detected - bootstrapping schema via create_all + alembic stamp head",
         extra={"event": "schema_bootstrap_fresh"},
     )
     Base.metadata.create_all(bind=engine)
@@ -99,20 +105,27 @@ def init_database() -> None:
         has_users = _table_exists("users")
 
         if current is None and not has_users:
+            if settings.is_production:
+                logger.info(
+                    "No alembic revision found in production - applying alembic upgrade head",
+                    extra={"event": "schema_upgrade_production_head"},
+                )
+                run_alembic_upgrade("head")
+                return
             bootstrap_fresh_schema()
             return
 
         if current is None and has_users:
             # Pre-Alembic / create_all database — align revision tracking.
             logger.warning(
-                "Found existing schema without alembic_version — stamping head",
+                "Found existing schema without alembic_version - stamping head",
                 extra={"event": "schema_stamp_existing"},
             )
             run_alembic_stamp("head")
             return
 
         if current == head:
-            logger.info("Alembic already at head (%s) — skip upgrade", head)
+            logger.info("Alembic already at head (%s) - skip upgrade", head)
             return
 
         run_alembic_upgrade("head")
@@ -122,7 +135,7 @@ def init_database() -> None:
         from app.db.base import Base
 
         logger.warning(
-            "Using Base.metadata.create_all — disabled in production; prefer Alembic",
+            "Using Base.metadata.create_all - disabled in production; prefer Alembic",
             extra={"event": "schema_create_all"},
         )
         Base.metadata.create_all(bind=engine)

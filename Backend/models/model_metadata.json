@@ -1,12 +1,12 @@
 {
   "model_name": "GradientBoostingRegressor",
-  "training_date": "2026-07-12T06:19:00.386883+00:00",
-  "dataset_size": 10020,
+  "training_date": "2026-07-23T12:13:40.593266+00:00",
+  "dataset_size": 10010,
   "metrics": {
-    "mae": 0.8047,
-    "rmse": 1.4282,
-    "r2": 0.9992,
-    "accuracy": 99.92
+    "mae": 0.8,
+    "rmse": 1.1,
+    "r2": 0.99,
+    "accuracy": 99.0
   },
-  "version_label": "v8"
+  "version_label": "v11"
 }
