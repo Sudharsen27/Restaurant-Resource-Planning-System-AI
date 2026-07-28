@@ -160,6 +160,15 @@ class Settings(BaseSettings):
         if self.is_production:
             self.enable_auto_training = False
 
+        # Render terminates TLS at the edge — disable in-app HTTPS redirects there.
+        # AWS ALB path still works: when HTTPS_REDIRECT_ENABLED=true and no Render env,
+        # redirects only apply for direct (non-proxy) access; proxy traffic is skipped
+        # in HttpsRedirectMiddleware when X-Forwarded-Proto is present.
+        import os
+
+        if os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"):
+            self.https_redirect_enabled = False
+
         # Ensure TLS requirement is present for managed Postgres providers when omitted.
         # Keeps compatibility for AWS RDS and Aiven while avoiding hardcoded hosts/creds.
         if self.is_production and "sslmode=" not in self.database_url:

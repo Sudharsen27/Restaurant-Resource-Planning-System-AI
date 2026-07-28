@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
+import traceback
 import uuid
 from collections import defaultdict, deque
 from threading import Lock
@@ -28,6 +30,47 @@ _CSRF_EXEMPT_PREFIXES = (
 )
 
 
+def _debug_middleware_enabled() -> bool:
+    return bool(settings.debug) or str(settings.log_level).upper() == "DEBUG"
+
+
+def _is_render_runtime() -> bool:
+    """Render sets RENDER=true (and related vars) in the container environment."""
+    return bool(os.getenv("RENDER")) or bool(os.getenv("RENDER_SERVICE_ID"))
+
+
+def _behind_tls_terminating_proxy(request: Request) -> bool:
+    """True when a reverse proxy already handles TLS (Render, ALB, nginx, etc.)."""
+    if _is_render_runtime():
+        return True
+    # Any X-Forwarded-Proto means we are behind a proxy — do not app-level redirect.
+    return "x-forwarded-proto" in {k.lower() for k in request.headers.keys()}
+
+
+def _mw_log(name: str, request: Request, phase: str, exc: BaseException | None = None) -> None:
+    if not _debug_middleware_enabled():
+        return
+    msg = f"[mw] {name} {phase} path={request.url.path} method={request.method}"
+    if exc is not None:
+        logger.error("%s error=%s\n%s", msg, exc, traceback.format_exc())
+    else:
+        logger.debug(msg)
+
+
+def _safe_error_response(exc: BaseException) -> JSONResponse:
+    """Return a JSON 500 instead of dropping the connection (which becomes a proxy 502)."""
+    logger.exception("Middleware pipeline failure: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "message": "An unexpected error occurred",
+            "errors": [],
+            "detail": "An unexpected error occurred",
+        },
+    )
+
+
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Log every API request and response with duration and status."""
 
@@ -36,10 +79,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
+        _mw_log("RequestLogging", request, "entered")
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         start = time.perf_counter()
         client_ip = request.client.host if request.client else None
-        # Propagate for downstream tracing
         request.state.request_id = request_id
 
         logger.info(
@@ -55,7 +98,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         try:
             response = await call_next(request)
-        except Exception:
+        except Exception as exc:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)
             logger.exception(
                 "API request failed",
@@ -68,7 +111,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     "client_ip": client_ip,
                 },
             )
-            raise
+            _mw_log("RequestLogging", request, "exception", exc)
+            return _safe_error_response(exc)
 
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
         response.headers["X-Request-ID"] = request_id
@@ -87,6 +131,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 "client_ip": client_ip,
             },
         )
+        _mw_log("RequestLogging", request, "exited")
         return response
 
 
@@ -98,29 +143,64 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        response = await call_next(request)
-        if settings.security_headers_enabled:
-            for key, value in security_headers().items():
-                response.headers.setdefault(key, value)
-        return response
+        _mw_log("SecurityHeaders", request, "entered")
+        try:
+            response = await call_next(request)
+            if settings.security_headers_enabled:
+                for key, value in security_headers().items():
+                    response.headers.setdefault(key, value)
+            _mw_log("SecurityHeaders", request, "exited")
+            return response
+        except Exception as exc:
+            _mw_log("SecurityHeaders", request, "exception", exc)
+            return _safe_error_response(exc)
 
 
 class HttpsRedirectMiddleware(BaseHTTPMiddleware):
-    """Enforce HTTPS in production behind TLS-terminating proxies."""
+    """Enforce HTTPS when enabled — but never behind Render / TLS-terminating proxies.
+
+    AWS ALB / Render terminate TLS and forward HTTP to the container with
+    ``X-Forwarded-Proto``. App-level redirects in that path cause proxy failures
+    (often surfaced as 502 Bad Gateway). Direct non-proxy access can still redirect.
+    """
 
     async def dispatch(
         self,
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        if not settings.https_redirect_enabled:
-            return await call_next(request)
+        _mw_log("HttpsRedirect", request, "entered")
+        try:
+            if not settings.https_redirect_enabled:
+                response = await call_next(request)
+                _mw_log("HttpsRedirect", request, "exited")
+                return response
 
-        proto = request.headers.get("X-Forwarded-Proto", request.url.scheme)
-        if proto != "https":
-            url = request.url.replace(scheme="https")
-            return RedirectResponse(str(url), status_code=308)
-        return await call_next(request)
+            # Render / proxy: TLS is handled at the edge — do not 308 inside the app.
+            if _behind_tls_terminating_proxy(request):
+                if _debug_middleware_enabled():
+                    logger.debug(
+                        "HttpsRedirect skipped (proxy/Render) path=%s xfp=%s render=%s",
+                        request.url.path,
+                        request.headers.get("X-Forwarded-Proto"),
+                        _is_render_runtime(),
+                    )
+                response = await call_next(request)
+                _mw_log("HttpsRedirect", request, "exited")
+                return response
+
+            proto = request.headers.get("X-Forwarded-Proto", request.url.scheme)
+            if str(proto).split(",")[0].strip().lower() != "https":
+                url = request.url.replace(scheme="https")
+                _mw_log("HttpsRedirect", request, "exited-redirect")
+                return RedirectResponse(str(url), status_code=308)
+
+            response = await call_next(request)
+            _mw_log("HttpsRedirect", request, "exited")
+            return response
+        except Exception as exc:
+            _mw_log("HttpsRedirect", request, "exception", exc)
+            return _safe_error_response(exc)
 
 
 class CsrfProtectionMiddleware(BaseHTTPMiddleware):
@@ -134,45 +214,58 @@ class CsrfProtectionMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        if not settings.csrf_enabled:
-            return await call_next(request)
+        _mw_log("CsrfProtection", request, "entered")
+        try:
+            if not settings.csrf_enabled:
+                response = await call_next(request)
+                _mw_log("CsrfProtection", request, "exited")
+                return response
 
-        path = request.url.path
-        if any(path.startswith(p) for p in _CSRF_EXEMPT_PREFIXES):
-            return await call_next(request)
+            path = request.url.path
+            if any(path.startswith(p) for p in _CSRF_EXEMPT_PREFIXES):
+                response = await call_next(request)
+                _mw_log("CsrfProtection", request, "exited")
+                return response
 
-        # Issue CSRF cookie on safe methods when missing
-        if request.method in _SAFE_METHODS:
-            response = await call_next(request)
-            if settings.csrf_cookie_name not in request.cookies:
-                token = generate_csrf_token()
-                response.set_cookie(
-                    settings.csrf_cookie_name,
-                    token,
-                    httponly=False,
-                    samesite="lax",
-                    secure=settings.is_production,
-                    path="/",
+            if request.method in _SAFE_METHODS:
+                response = await call_next(request)
+                if settings.csrf_cookie_name not in request.cookies:
+                    token = generate_csrf_token()
+                    response.set_cookie(
+                        settings.csrf_cookie_name,
+                        token,
+                        httponly=False,
+                        samesite="lax",
+                        secure=settings.is_production,
+                        path="/",
+                    )
+                _mw_log("CsrfProtection", request, "exited")
+                return response
+
+            auth = request.headers.get("Authorization", "")
+            if auth.lower().startswith("bearer "):
+                response = await call_next(request)
+                _mw_log("CsrfProtection", request, "exited")
+                return response
+
+            cookie_token = request.cookies.get(settings.csrf_cookie_name)
+            header_token = request.headers.get(settings.csrf_header_name)
+            if not cookie_token or not header_token or cookie_token != header_token:
+                _mw_log("CsrfProtection", request, "exited-403")
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "success": False,
+                        "message": "CSRF validation failed",
+                        "detail": "CSRF validation failed",
+                    },
                 )
+            response = await call_next(request)
+            _mw_log("CsrfProtection", request, "exited")
             return response
-
-        # Mutating requests: skip if Authorization bearer present (SPA JWT)
-        auth = request.headers.get("Authorization", "")
-        if auth.lower().startswith("bearer "):
-            return await call_next(request)
-
-        cookie_token = request.cookies.get(settings.csrf_cookie_name)
-        header_token = request.headers.get(settings.csrf_header_name)
-        if not cookie_token or not header_token or cookie_token != header_token:
-            return JSONResponse(
-                status_code=403,
-                content={
-                    "success": False,
-                    "message": "CSRF validation failed",
-                    "detail": "CSRF validation failed",
-                },
-            )
-        return await call_next(request)
+        except Exception as exc:
+            _mw_log("CsrfProtection", request, "exception", exc)
+            return _safe_error_response(exc)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -188,67 +281,76 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        if not settings.rate_limit_enabled:
-            return await call_next(request)
-
-        # Never throttle health/metrics
-        if request.url.path.startswith("/health") or request.url.path.startswith("/metrics"):
-            return await call_next(request)
-
-        client_ip = request.client.host if request.client else "unknown"
-        window = settings.rate_limit_window_seconds
-        limit = settings.rate_limit_requests
-
-        allowed = True
-        remaining = limit
+        _mw_log("RateLimit", request, "entered")
         try:
-            from app.services.cache_service import get_cache_service
+            if not settings.rate_limit_enabled:
+                response = await call_next(request)
+                _mw_log("RateLimit", request, "exited")
+                return response
 
-            cache = get_cache_service()
-            allowed, remaining = cache.rate_limit_hit(
-                f"ip:{client_ip}",
-                limit=limit,
-                window_seconds=window,
-            )
-        except Exception:
-            # Last-resort in-process limiter
-            now = time.time()
-            with self._lock:
-                bucket = self._hits[client_ip]
-                while bucket and bucket[0] <= now - window:
-                    bucket.popleft()
-                if len(bucket) >= limit:
-                    allowed = False
-                    remaining = 0
-                else:
-                    bucket.append(now)
-                    remaining = limit - len(bucket)
+            if request.url.path.startswith("/health") or request.url.path.startswith("/metrics"):
+                response = await call_next(request)
+                _mw_log("RateLimit", request, "exited")
+                return response
 
-        if not allowed:
-            logger.warning(
-                "Rate limit exceeded",
-                extra={
-                    "event": "rate_limit",
-                    "client_ip": client_ip,
-                    "path": request.url.path,
-                },
-            )
-            return JSONResponse(
-                status_code=429,
-                content={
-                    "success": False,
-                    "message": "Rate limit exceeded",
-                    "errors": [],
-                    "detail": "Rate limit exceeded",
-                },
-                headers={
-                    "Retry-After": str(window),
-                    "X-RateLimit-Limit": str(limit),
-                    "X-RateLimit-Remaining": "0",
-                },
-            )
+            client_ip = request.client.host if request.client else "unknown"
+            window = settings.rate_limit_window_seconds
+            limit = settings.rate_limit_requests
 
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(limit)
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
-        return response
+            allowed = True
+            remaining = limit
+            try:
+                from app.services.cache_service import get_cache_service
+
+                cache = get_cache_service()
+                allowed, remaining = cache.rate_limit_hit(
+                    f"ip:{client_ip}",
+                    limit=limit,
+                    window_seconds=window,
+                )
+            except Exception:
+                now = time.time()
+                with self._lock:
+                    bucket = self._hits[client_ip]
+                    while bucket and bucket[0] <= now - window:
+                        bucket.popleft()
+                    if len(bucket) >= limit:
+                        allowed = False
+                        remaining = 0
+                    else:
+                        bucket.append(now)
+                        remaining = limit - len(bucket)
+
+            if not allowed:
+                logger.warning(
+                    "Rate limit exceeded",
+                    extra={
+                        "event": "rate_limit",
+                        "client_ip": client_ip,
+                        "path": request.url.path,
+                    },
+                )
+                _mw_log("RateLimit", request, "exited-429")
+                return JSONResponse(
+                    status_code=429,
+                    content={
+                        "success": False,
+                        "message": "Rate limit exceeded",
+                        "errors": [],
+                        "detail": "Rate limit exceeded",
+                    },
+                    headers={
+                        "Retry-After": str(window),
+                        "X-RateLimit-Limit": str(limit),
+                        "X-RateLimit-Remaining": "0",
+                    },
+                )
+
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(limit)
+            response.headers["X-RateLimit-Remaining"] = str(remaining)
+            _mw_log("RateLimit", request, "exited")
+            return response
+        except Exception as exc:
+            _mw_log("RateLimit", request, "exception", exc)
+            return _safe_error_response(exc)

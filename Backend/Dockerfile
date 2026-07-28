@@ -38,6 +38,7 @@ USER app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8000/health/live || exit 1
+    CMD sh -c 'curl -fsS "http://127.0.0.1:${PORT:-${API_PORT:-8000}}/health/live" || exit 1'
 
-CMD ["sh", "-c", "uvicorn app.main:app --host ${API_HOST:-0.0.0.0} --port ${PORT:-${API_PORT:-8000}} --workers ${UVICORN_WORKERS:-2}"]
+# PORT is required by Render; UVICORN_WORKERS defaults to 1 on Render (512MB), else 2 for ECS.
+CMD ["sh", "-c", "WORKERS=${UVICORN_WORKERS:-$( [ -n \"$RENDER\" ] && echo 1 || echo 2 )}; uvicorn app.main:app --host ${API_HOST:-0.0.0.0} --port ${PORT:-${API_PORT:-8000}} --workers ${WORKERS}"]
