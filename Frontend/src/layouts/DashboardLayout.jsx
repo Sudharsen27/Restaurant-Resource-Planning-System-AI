@@ -13,11 +13,11 @@ function Shell() {
   const pad = collapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black">
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#111815]">
       <Sidebar />
       <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-200 ${pad}`}>
         <Navbar />
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 xl:p-8">
           <ErrorBoundary>
             <div className="animate-in fade-in duration-200">
               <Outlet />

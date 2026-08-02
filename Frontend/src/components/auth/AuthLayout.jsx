@@ -7,7 +7,7 @@ import { BrandPanel, ThemeToggle } from './BrandPanel'
  */
 export default function AuthLayout({ children }) {
   return (
-    <div className="auth-shell flex min-h-dvh flex-col bg-[#F7F8FA] dark:bg-black md:h-dvh md:flex-row md:overflow-hidden">
+    <div className="auth-shell flex min-h-dvh flex-col bg-[#F7F8FA] dark:bg-black lg:h-dvh lg:flex-row lg:overflow-hidden">
       <a
         href="#auth-main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-slate-900 focus:shadow-lg dark:focus:bg-zinc-900 dark:focus:text-white"
@@ -15,18 +15,18 @@ export default function AuthLayout({ children }) {
         Skip to sign-in form
       </a>
 
-      <div className="hidden md:contents">
+      <div className="hidden lg:contents">
         <BrandPanel />
       </div>
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <BrandPanel compact />
       </div>
 
       <main
         id="auth-main"
-        className="relative flex min-h-0 flex-1 flex-col md:w-[54%] lg:w-[60%]"
+        className="relative flex min-h-0 flex-1 flex-col lg:w-[60%]"
       >
-        <div className="absolute right-4 top-4 z-20 hidden md:block">
+        <div className="absolute right-4 top-4 z-20 hidden lg:block">
           <ThemeToggle />
         </div>
 

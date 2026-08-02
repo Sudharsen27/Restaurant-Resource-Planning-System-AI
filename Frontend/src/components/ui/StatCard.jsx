@@ -1,14 +1,14 @@
 export default function StatCard({ label, value, change, icon: Icon, accent = 'blue' }) {
   const accents = {
-    blue: 'from-blue-500/10 to-indigo-500/10 text-blue-600 dark:text-blue-400',
-    emerald: 'from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400',
-    amber: 'from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400',
-    violet: 'from-violet-500/10 to-purple-500/10 text-violet-600 dark:text-violet-400',
-    rose: 'from-rose-500/10 to-pink-500/10 text-rose-600 dark:text-rose-400',
+    blue: 'bg-sky-50 text-sky-700 dark:bg-sky-400/10 dark:text-sky-300',
+    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300',
+    violet: 'bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300',
+    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300',
   }
 
   return (
-    <div className="min-w-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80">
+    <div className="min-w-0 rounded-xl border border-stone-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(28,35,30,0.04)] transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-[#1b2520]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -24,7 +24,7 @@ export default function StatCard({ label, value, change, icon: Icon, accent = 'b
           )}
         </div>
         {Icon && (
-          <div className={`rounded-xl bg-gradient-to-br p-2.5 ${accents[accent]}`}>
+          <div className={`rounded-lg p-2.5 ${accents[accent]}`}>
             <Icon className="h-5 w-5" />
           </div>
         )}
