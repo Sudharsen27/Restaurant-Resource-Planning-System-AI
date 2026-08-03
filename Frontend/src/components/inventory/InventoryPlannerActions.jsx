@@ -16,7 +16,7 @@ export default function InventoryPlannerActions({
   errors = {},
 }) {
   return (
-    <div className="inventory-planner-actions rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/80">
+    <div className="inventory-planner-actions rounded-xl border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,35,30,0.04)] dark:border-white/10 dark:bg-[#1b2520]">
       <div className="grid gap-4 lg:grid-cols-4 lg:items-end">
         <label>
           <span className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -27,8 +27,8 @@ export default function InventoryPlannerActions({
             min={1}
             value={customers}
             onChange={(e) => onCustomersChange(e.target.value)}
-            className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-slate-800 ${
-              errors.customers ? 'border-rose-400' : 'border-slate-200 dark:border-slate-700'
+            className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-[#1b2520] ${
+              errors.customers ? 'border-rose-400' : 'border-stone-200 dark:border-white/10'
             }`}
           />
           {errors.customers && (
@@ -66,8 +66,8 @@ export default function InventoryPlannerActions({
             step={0.5}
             value={leadTime}
             onChange={(e) => onLeadTimeChange(e.target.value)}
-            className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-slate-800 ${
-              errors.leadTime ? 'border-rose-400' : 'border-slate-200 dark:border-slate-700'
+            className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-[#1b2520] ${
+              errors.leadTime ? 'border-rose-400' : 'border-stone-200 dark:border-white/10'
             }`}
           />
         </label>
@@ -77,7 +77,7 @@ export default function InventoryPlannerActions({
             type="button"
             onClick={onGenerate}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/15 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

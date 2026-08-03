@@ -108,9 +108,9 @@ export default function KitchenPage() {
       {isLoading ? (
         <LoadingSpinner label="Loading kitchen queue…" />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-4">
+        <div className="flex gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
           {COLUMNS.map((col) => (
-            <div key={col.key} className={`rounded-2xl border-t-4 p-3 ${col.tone}`}>
+            <div key={col.key} className={`min-w-[260px] flex-1 rounded-2xl border-t-4 p-3 lg:min-w-0 ${col.tone}`}>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-semibold text-slate-900 dark:text-white">{col.title}</h2>
                 <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs font-bold dark:bg-slate-900">

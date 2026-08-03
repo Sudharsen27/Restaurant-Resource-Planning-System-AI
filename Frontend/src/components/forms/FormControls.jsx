@@ -1,16 +1,16 @@
 const base =
-  'w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base sm:text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/20'
+  'w-full min-h-11 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-base text-stone-800 shadow-sm sm:text-sm outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 dark:border-white/10 dark:bg-[#1b2520] dark:text-stone-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/20'
 
 function Field({ label, error, hint, children, htmlFor }) {
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={htmlFor} className="block text-sm font-medium text-slate-700 dark:text-zinc-200">
+        <label htmlFor={htmlFor} className="block text-sm font-medium text-stone-700 dark:text-stone-200">
           {label}
         </label>
       )}
       {children}
-      {hint && !error && <p className="text-xs text-slate-500 dark:text-zinc-400">{hint}</p>}
+      {hint && !error && <p className="text-xs text-stone-500 dark:text-stone-400">{hint}</p>}
       {error && <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error}</p>}
     </div>
   )
@@ -53,7 +53,7 @@ export function Checkbox({ label, id, className = '', ...props }) {
   const inputId = id || props.name
   return (
     <label htmlFor={inputId} className={`inline-flex items-center gap-2 text-sm ${className}`}>
-      <input id={inputId} type="checkbox" className="h-4 w-4 rounded border-slate-300" {...props} />
+      <input id={inputId} type="checkbox" className="h-4 w-4 rounded border-stone-300 text-emerald-600 focus:ring-emerald-500/30" {...props} />
       <span>{label}</span>
     </label>
   )
@@ -71,7 +71,7 @@ export function Switch({ label, checked, onChange, id }) {
     >
       <span
         className={`relative h-6 w-11 rounded-full transition ${
-          checked ? 'bg-blue-600 dark:bg-zinc-100' : 'bg-slate-300 dark:bg-zinc-700'
+          checked ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-stone-300 dark:bg-stone-700'
         }`}
       >
         <span
@@ -114,7 +114,7 @@ export function FileUpload({ label, accept, onChange, hint }) {
         type="file"
         accept={accept}
         onChange={(e) => onChange?.(e.target.files?.[0] || null)}
-        className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white dark:file:bg-zinc-100 dark:file:text-zinc-900"
+        className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-700"
       />
     </Field>
   )

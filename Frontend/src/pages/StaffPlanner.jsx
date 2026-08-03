@@ -158,7 +158,7 @@ export default function StaffPlanner() {
 
       {loading && !hasPlan && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 dark:border-slate-700">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
           <p className="text-sm text-slate-500">Loading staff plan from API…</p>
         </div>
       )}
@@ -171,7 +171,7 @@ export default function StaffPlanner() {
             <button
               type="button"
               onClick={handleGenerate}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >
               Generate Staff Plan
             </button>

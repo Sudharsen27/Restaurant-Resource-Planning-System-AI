@@ -38,7 +38,16 @@ export default function ProfileMenu() {
     .toUpperCase()
 
   return (
-    <div className="relative" ref={ref}>
+    <div
+      className="relative"
+      ref={ref}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          setOpen(false)
+          event.currentTarget.querySelector('button')?.focus()
+        }
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

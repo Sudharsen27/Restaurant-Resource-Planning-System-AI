@@ -143,8 +143,8 @@ export default function Forecast() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600/10">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600/10">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Customer Forecast
@@ -202,7 +202,7 @@ export default function Forecast() {
         <div className="space-y-6 xl:col-span-3">
           {restoring && !result && (
             <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 py-16 dark:border-slate-700">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
               <p className="text-sm text-slate-500">Loading latest prediction from PostgreSQL…</p>
             </div>
           )}
@@ -228,7 +228,7 @@ export default function Forecast() {
           {result && (
             <>
               {submitting && (
-                <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Generating prediction…
                 </div>
@@ -246,7 +246,7 @@ export default function Forecast() {
                   subtext={
                     result.prediction_id != null ? `ID #${result.prediction_id}` : undefined
                   }
-                  accent="blue"
+                  accent="emerald"
                   size="lg"
                 />
                 <ForecastMetricCard

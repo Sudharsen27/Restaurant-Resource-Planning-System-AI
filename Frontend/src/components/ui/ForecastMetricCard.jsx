@@ -2,30 +2,30 @@ export default function ForecastMetricCard({
   label,
   value,
   subtext,
-  accent = 'blue',
+  accent = 'emerald',
   children,
   title,
   size = 'md',
 }) {
   const styles = {
     blue: {
-      border: 'border-blue-200 dark:border-blue-900',
-      bg: 'from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50',
-      label: 'text-blue-600 dark:text-blue-400',
+      border: 'border-sky-200 dark:border-sky-900',
+      bg: 'bg-sky-50 dark:bg-sky-950/30',
+      label: 'text-sky-700 dark:text-sky-300',
     },
     emerald: {
       border: 'border-emerald-200 dark:border-emerald-900',
-      bg: 'from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
       label: 'text-emerald-600 dark:text-emerald-400',
     },
     violet: {
       border: 'border-violet-200 dark:border-violet-900',
-      bg: 'from-violet-50 to-purple-50 dark:from-violet-950/50 dark:to-purple-950/50',
+      bg: 'bg-violet-50 dark:bg-violet-950/30',
       label: 'text-violet-600 dark:text-violet-400',
     },
     amber: {
       border: 'border-amber-200 dark:border-amber-900',
-      bg: 'from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50',
+      bg: 'bg-amber-50 dark:bg-amber-950/30',
       label: 'text-amber-600 dark:text-amber-400',
     },
   }
@@ -40,7 +40,7 @@ export default function ForecastMetricCard({
 
   return (
     <div
-      className={`flex min-h-[120px] min-w-0 flex-col rounded-2xl border bg-gradient-to-br p-4 sm:p-5 ${theme.border} ${theme.bg}`}
+      className={`flex min-h-[120px] min-w-0 flex-col rounded-xl border p-4 shadow-[0_1px_2px_rgba(28,35,30,0.04)] sm:p-5 ${theme.border} ${theme.bg}`}
     >
       <p className={`text-[11px] font-medium uppercase tracking-wider ${theme.label}`}>{label}</p>
       <p

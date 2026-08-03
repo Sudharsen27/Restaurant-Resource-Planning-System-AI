@@ -118,13 +118,13 @@ export default function Dashboard() {
     }))
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Executive dashboard
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+            Operations overview
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-stone-500">
             {restaurant?.name}
             {branch ? ` · ${branch.name}` : ''} — live ops overview
           </p>
@@ -136,7 +136,7 @@ export default function Dashboard() {
             refetchErp()
           }}
           disabled={isFetching}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950"
+          className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50 disabled:opacity-60 dark:border-white/10 dark:bg-[#1b2520] dark:text-stone-200 dark:hover:bg-white/10"
         >
           <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
           Refresh
@@ -151,7 +151,7 @@ export default function Dashboard() {
       {/* ERP KPI row — mock until finance APIs exist */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Today</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-500">Today across locations</h2>
           <span className="text-[10px] uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
             Live data · PostgreSQL
           </span>
@@ -258,7 +258,7 @@ export default function Dashboard() {
 
       {/* Live ML metrics when API available */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-500">
           Forecasting engine
         </h2>
         {isLoading ? (
@@ -331,7 +331,7 @@ export default function Dashboard() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Quick actions</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-500">Quick actions</h2>
         <QuickActions />
       </section>
 

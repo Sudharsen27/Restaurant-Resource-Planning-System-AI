@@ -70,18 +70,18 @@ export const defaultForecastInput = () => {
 export const AOV = 450
 
 export const chartColors = {
-  primary: '#3b82f6',
-  secondary: '#8b5cf6',
-  success: '#10b981',
+  primary: '#059669',
+  secondary: '#0f766e',
+  success: '#34a853',
   warning: '#f59e0b',
   danger: '#ef4444',
-  muted: '#94a3b8',
-  grid: '#e2e8f0',
-  gridDark: '#334155',
+  muted: '#a29d91',
+  grid: '#e5e2da',
+  gridDark: '#3f4a43',
 }
 
 export const getChartTheme = (dark) => ({
   grid: dark ? chartColors.gridDark : chartColors.grid,
-  text: dark ? '#94a3b8' : '#64748b',
-  tooltip: dark ? '#1e293b' : '#ffffff',
+  text: dark ? '#bdb9ae' : '#747067',
+  tooltip: dark ? '#1b2520' : '#ffffff',
 })

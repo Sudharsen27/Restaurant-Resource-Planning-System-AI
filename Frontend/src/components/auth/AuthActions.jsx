@@ -12,7 +12,7 @@ export function AuthPrimaryButton({
   return (
     <button
       type={type}
-      className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-500 active:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-blue-500 dark:hover:bg-blue-400 ${className}`}
+      className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm shadow-emerald-950/15 transition hover:bg-emerald-500 active:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-emerald-500 dark:hover:bg-emerald-400 ${className}`}
       {...props}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
@@ -27,7 +27,7 @@ export function AuthSecondaryButton({ children, className = '', ...props }) {
   return (
     <button
       type="button"
-      className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/25 disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900 ${className}`}
+      className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 transition hover:bg-stone-50 active:bg-stone-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-stone-400/25 disabled:opacity-55 dark:border-white/10 dark:bg-[#1b2520] dark:text-stone-100 dark:hover:bg-white/10 ${className}`}
       {...props}
     >
       {children}
@@ -68,24 +68,24 @@ export function SocialLoginButton({ provider = 'Google', onClick, disabled }) {
 export function AuthDivider({ label = 'or' }) {
   return (
     <div className="relative flex items-center gap-3 py-0.5" role="separator" aria-label={label}>
-      <div className="h-px flex-1 bg-slate-200 dark:bg-zinc-800" />
-      <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+      <div className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
+      <span className="text-[11px] font-medium uppercase tracking-wider text-stone-400 dark:text-stone-500">
         {label}
       </span>
-      <div className="h-px flex-1 bg-slate-200 dark:bg-zinc-800" />
+      <div className="h-px flex-1 bg-stone-200 dark:bg-white/10" />
     </div>
   )
 }
 
 export function FormFooter({ children }) {
-  return <p className="text-center text-sm text-slate-500 dark:text-zinc-400">{children}</p>
+  return <p className="text-center text-sm text-stone-500 dark:text-stone-400">{children}</p>
 }
 
 export function AuthLink({ to, children, className = '' }) {
   return (
     <Link
       to={to}
-      className={`font-semibold text-blue-600 underline-offset-2 transition hover:text-blue-500 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400 dark:hover:text-blue-300 ${className}`}
+      className={`font-semibold text-emerald-700 underline-offset-2 transition hover:text-emerald-600 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:text-emerald-400 dark:hover:text-emerald-300 ${className}`}
     >
       {children}
     </Link>

@@ -3,9 +3,9 @@ import { forwardRef, useId, useState } from 'react'
 import { passwordStrength } from './authBrand'
 
 const inputBase =
-  'w-full rounded-lg border bg-white px-3 py-2.5 text-[15px] leading-snug text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-950 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20'
+  'w-full rounded-lg border bg-white px-3 py-2.5 text-[15px] leading-snug text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#1b2520] dark:text-stone-50 dark:placeholder:text-stone-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/20'
 
-const inputOk = 'border-slate-300 hover:border-slate-400 dark:border-zinc-700 dark:hover:border-zinc-600'
+const inputOk = 'border-stone-300 hover:border-stone-400 dark:border-white/10 dark:hover:border-white/20'
 const inputErr =
   'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15 dark:border-rose-500/70'
 
@@ -82,7 +82,7 @@ export const PasswordInput = forwardRef(function PasswordInput(
           onClick={() => setShow((v) => !v)}
           aria-pressed={show}
           aria-label={show ? 'Hide password' : 'Show password'}
-          className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:bg-white/10 dark:hover:text-stone-200"
         >
           {show ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
         </button>
@@ -140,7 +140,7 @@ export function AuthCheckbox({ id, checked, onChange, children, error }) {
           type="checkbox"
           checked={checked}
           onChange={onChange}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 dark:border-zinc-600 dark:bg-zinc-950"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-stone-300 text-emerald-600 focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-0 dark:border-white/20 dark:bg-[#1b2520]"
         />
         <span className="leading-snug">{children}</span>
       </label>

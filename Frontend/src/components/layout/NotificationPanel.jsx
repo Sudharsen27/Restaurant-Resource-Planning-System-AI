@@ -34,6 +34,10 @@ export default function NotificationPanel() {
       <div
         role="dialog"
         aria-label="Notifications"
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setPanelOpen(false)
+        }}
         className="absolute right-0 top-12 z-[60] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-zinc-800">

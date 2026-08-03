@@ -21,8 +21,8 @@ import { getChartTheme } from '../../utils/format'
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg dark:border-slate-700 dark:bg-slate-800">
-      <p className="mb-1 text-xs font-medium text-slate-500">{label}</p>
+    <div className="rounded-lg border border-stone-200 bg-white px-3 py-2 shadow-lg dark:border-white/10 dark:bg-[#1b2520]">
+      <p className="mb-1 text-xs font-medium text-stone-500">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} className="text-sm font-semibold" style={{ color: entry.color }}>
           {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
@@ -126,7 +126,7 @@ export function BarChartCard({ data, xKey, bars, height = 280, layout = 'horizon
 }
 
 export function PieChartCard({ data, height = 280 }) {
-  const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
+  const COLORS = ['#059669', '#0f766e', '#34a853', '#f59e0b', '#ef4444', '#0891b2', '#db2777']
 
   return (
     <ResponsiveContainer width="100%" height={height}>

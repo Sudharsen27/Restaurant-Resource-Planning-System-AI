@@ -17,7 +17,7 @@ function TextInput({ error, className = '', ...props }) {
       className={`w-full rounded-lg border bg-white px-3 py-2 text-sm transition focus:outline-none focus:ring-2 dark:bg-slate-800 dark:text-white ${
         error
           ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
-          : 'border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 dark:border-slate-700'
+          : 'border-stone-200 focus:border-emerald-500 focus:ring-emerald-500/20 dark:border-white/10'
       } ${className}`}
     />
   )
@@ -36,7 +36,7 @@ function Toggle({ checked, onChange, label, description }) {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'
+          checked ? 'bg-emerald-600' : 'bg-stone-300 dark:bg-stone-600'
         }`}
       >
         <span
@@ -54,7 +54,7 @@ function Section({ icon: Icon, title, children }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-        <Icon className="h-4 w-4 text-blue-600" />
+        <Icon className="h-4 w-4 text-emerald-600" />
         <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
           {title}
         </h4>
@@ -126,7 +126,7 @@ export default function ForecastForm({ form, onChange, onSubmit, submitting, err
 
       <div className="space-y-3">
         <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-          <Calendar className="h-4 w-4 text-blue-600" />
+          <Calendar className="h-4 w-4 text-emerald-600" />
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Events
           </h4>
@@ -234,7 +234,7 @@ export default function ForecastForm({ form, onChange, onSubmit, submitting, err
             step={0.01}
             value={form.kitchen_load}
             onChange={(e) => set('kitchen_load', Number(e.target.value))}
-            className="w-full accent-blue-600"
+            className="w-full accent-emerald-600"
           />
         </label>
         <label className="sm:col-span-2">
@@ -251,7 +251,7 @@ export default function ForecastForm({ form, onChange, onSubmit, submitting, err
             step={0.01}
             value={form.table_utilization}
             onChange={(e) => set('table_utilization', Number(e.target.value))}
-            className="w-full accent-blue-600"
+            className="w-full accent-emerald-600"
           />
         </label>
         <label>
@@ -271,7 +271,7 @@ export default function ForecastForm({ form, onChange, onSubmit, submitting, err
       <button
         type="submit"
         disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/15 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? (
           <>

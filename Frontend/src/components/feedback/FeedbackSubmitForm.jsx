@@ -20,10 +20,10 @@ export default function FeedbackSubmitForm({
           required
           value={form.prediction_id}
           onChange={(e) => onChange({ ...form, prediction_id: e.target.value })}
-          className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-slate-800 ${
+          className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:bg-[#1b2520] ${
             fieldErrors.prediction_id
               ? 'border-rose-400 focus:border-rose-500'
-              : 'border-slate-200 focus:border-blue-500 dark:border-slate-700'
+              : 'border-stone-200 focus:border-emerald-500 dark:border-white/10'
           }`}
         >
           <option value="">Select prediction ID…</option>
@@ -46,8 +46,8 @@ export default function FeedbackSubmitForm({
       </label>
 
       {selectedPrediction && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 dark:border-indigo-900 dark:bg-indigo-950/30">
-          <p className="text-xs font-medium uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <p className="text-xs font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
             Predicted Customers
           </p>
           <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
@@ -72,10 +72,10 @@ export default function FeedbackSubmitForm({
           required
           value={form.actual_customers}
           onChange={(e) => onChange({ ...form, actual_customers: e.target.value })}
-          className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-slate-800 ${
+          className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm dark:bg-[#1b2520] ${
             fieldErrors.actual_customers
               ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
-              : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700'
+              : 'border-stone-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10'
           }`}
           placeholder="Enter actual customer count"
         />
@@ -94,7 +94,7 @@ export default function FeedbackSubmitForm({
           maxLength={2000}
           value={form.comments}
           onChange={(e) => onChange({ ...form, comments: e.target.value })}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800"
+          className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-[#1b2520]"
           placeholder="Weather, events, staffing issues, promotions…"
         />
         <p className="mt-1 text-right text-[10px] text-slate-400">{form.comments.length}/2000</p>
@@ -103,7 +103,7 @@ export default function FeedbackSubmitForm({
       <button
         type="submit"
         disabled={submitting || !form.prediction_id}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/15 hover:bg-emerald-700 disabled:opacity-60"
       >
         {submitting ? (
           <>

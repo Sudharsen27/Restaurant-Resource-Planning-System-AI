@@ -35,10 +35,10 @@ export const tokens = {
 }
 
 export const chartPalette = {
-  primary: '#3b82f6',
-  secondary: '#10b981',
+  primary: '#059669',
+  secondary: '#0f766e',
   tertiary: '#f59e0b',
   danger: '#f43f5e',
-  muted: '#71717a',
-  grid: 'rgba(113, 113, 122, 0.15)',
+  muted: '#747067',
+  grid: 'rgba(116, 112, 103, 0.15)',
 }

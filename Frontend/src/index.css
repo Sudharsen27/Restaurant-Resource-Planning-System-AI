@@ -29,6 +29,43 @@ html {
   --color-slate-800: #292824;
   --color-slate-900: #1d1d1a;
   --color-slate-950: #121210;
+  /*
+   * Compatibility mappings keep legacy Tailwind utilities visually coherent
+   * while individual screens are migrated to semantic hospitality tokens.
+   */
+  --color-blue-50: #ecfdf5;
+  --color-blue-100: #d1fae5;
+  --color-blue-200: #a7f3d0;
+  --color-blue-300: #6ee7b7;
+  --color-blue-400: #34d399;
+  --color-blue-500: #10b981;
+  --color-blue-600: #059669;
+  --color-blue-700: #047857;
+  --color-blue-800: #065f46;
+  --color-blue-900: #064e3b;
+  --color-blue-950: #022c22;
+  --color-indigo-50: #f0fdfa;
+  --color-indigo-100: #ccfbf1;
+  --color-indigo-200: #99f6e4;
+  --color-indigo-300: #5eead4;
+  --color-indigo-400: #2dd4bf;
+  --color-indigo-500: #14b8a6;
+  --color-indigo-600: #0d9488;
+  --color-indigo-700: #0f766e;
+  --color-indigo-800: #115e59;
+  --color-indigo-900: #134e4a;
+  --color-indigo-950: #042f2e;
+  --color-zinc-50: #faf9f6;
+  --color-zinc-100: #f2f0ea;
+  --color-zinc-200: #e2ded4;
+  --color-zinc-300: #cbc5b9;
+  --color-zinc-400: #a8a194;
+  --color-zinc-500: #777166;
+  --color-zinc-600: #5c574f;
+  --color-zinc-700: #413f39;
+  --color-zinc-800: #2c2d29;
+  --color-zinc-900: #1b2520;
+  --color-zinc-950: #111815;
 }
 
 body {
@@ -67,12 +104,12 @@ html.dark body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c8c2b5;
   border-radius: 3px;
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #3f4a43;
 }
 
 /* Subtle page entrance — prefer CSS over heavy animation libs */
@@ -158,6 +195,13 @@ html.dark ::-webkit-scrollbar-thumb {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .animate-in,
   .auth-fade-up,
   .auth-card-enter,
   .auth-page-enter,

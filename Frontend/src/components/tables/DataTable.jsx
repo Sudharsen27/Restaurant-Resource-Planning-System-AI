@@ -61,7 +61,7 @@ export default function DataTable({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             value={query}
             onChange={(e) => {
@@ -69,14 +69,15 @@ export default function DataTable({
               setPage(1)
             }}
             placeholder="Filter rows…"
-            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            aria-label="Filter table rows"
+            className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-9 pr-3 text-sm text-stone-800 shadow-sm outline-none placeholder:text-stone-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-white/10 dark:bg-[#1b2520] dark:text-stone-100"
           />
         </div>
         <details className="relative">
-          <summary className="cursor-pointer list-none rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-zinc-700">
+          <summary className="cursor-pointer list-none rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm dark:border-white/10 dark:bg-[#1b2520] dark:text-stone-200">
             Columns
           </summary>
-          <div className="absolute right-0 z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-zinc-700 dark:bg-zinc-950">
+          <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-stone-200 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-[#1b2520]">
             {columns.map((col) => (
               <label key={col.key} className="flex items-center gap-2 px-2 py-1 text-sm">
                 <input
@@ -106,17 +107,17 @@ export default function DataTable({
       {pageRows.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-zinc-800">
-          <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-zinc-800">
-            <thead className="bg-slate-50 dark:bg-zinc-900/80">
+        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white dark:border-white/10 dark:bg-[#1b2520]">
+          <table className="min-w-full divide-y divide-stone-200 text-sm dark:divide-white/10">
+            <thead className="bg-stone-50 dark:bg-white/5">
               <tr>
                 {visibleCols.map((col) => (
                   <th
                     key={col.key}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-stone-500"
                   >
                     {col.sortable !== false ? (
-                      <button type="button" onClick={() => toggleSort(col.key)} className="hover:text-slate-800">
+                      <button type="button" onClick={() => toggleSort(col.key)} className="hover:text-emerald-700 dark:hover:text-emerald-300">
                         {col.label}
                         {sortKey === col.key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                       </button>
@@ -127,13 +128,13 @@ export default function DataTable({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:divide-zinc-900 dark:bg-black/40">
+            <tbody className="divide-y divide-stone-100 bg-white dark:divide-white/5 dark:bg-transparent">
               {pageRows.map((row, idx) => (
-                <tr key={row.id || idx} className="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50">
+                <tr key={row.id || idx} className="transition-colors hover:bg-emerald-50/40 dark:hover:bg-emerald-400/5">
                   {visibleCols.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-4 py-3 text-slate-700 dark:text-zinc-300 ${
+                      className={`px-4 py-3 text-stone-700 dark:text-stone-300 ${
                         col.key === 'actions' ? 'text-right' : 'whitespace-nowrap'
                       }`}
                     >
@@ -147,7 +148,7 @@ export default function DataTable({
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-slate-500">
+      <div className="flex items-center justify-between text-xs text-stone-500">
         <span>
           {filtered.length} row{filtered.length === 1 ? '' : 's'} · page {page}/{totalPages}
         </span>
