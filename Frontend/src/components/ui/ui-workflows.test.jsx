@@ -1,4 +1,5 @@
 /* global describe, it, expect */
+import { useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -15,6 +16,20 @@ vi.mock('../../context/AuthContext', () => ({
 vi.mock('../../context/ToastContext', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }))
+
+function ReRenderingModal() {
+  const [value, setValue] = useState('')
+
+  return (
+    <AppModal open title="New employee" onClose={() => {}} hideFooter>
+      <input
+        aria-label="Employee code"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
+    </AppModal>
+  )
+}
 
 describe('shared workflow components', () => {
   it('filters table rows through its accessible search field', () => {
@@ -45,6 +60,16 @@ describe('shared workflow components', () => {
     expect(dialog).toBeInTheDocument()
 
     await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
+  })
+
+  it('keeps an input focused after its parent re-renders', async () => {
+    render(<ReRenderingModal />)
+
+    const employeeCode = screen.getByLabelText('Employee code')
+    employeeCode.focus()
+    fireEvent.change(employeeCode, { target: { value: '112' } })
+
+    await waitFor(() => expect(document.activeElement).toBe(employeeCode))
   })
 })
 

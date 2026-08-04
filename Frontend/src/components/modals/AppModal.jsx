@@ -28,6 +28,11 @@ export default function AppModal({
   hideFooter = false,
 }) {
   const dialogRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return undefined
@@ -35,7 +40,7 @@ export default function AppModal({
     document.body.style.overflow = 'hidden'
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        onClose?.()
+        onCloseRef.current?.()
         return
       }
       if (e.key !== 'Tab' || !dialogRef.current) return
@@ -65,7 +70,7 @@ export default function AppModal({
       document.removeEventListener('keydown', onKey)
       window.clearTimeout(focusTimer)
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
