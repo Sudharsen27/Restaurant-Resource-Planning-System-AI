@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 from app.schemas.inventory import InventoryCreate, InventoryResponse
 from app.services import inventory_service
-from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -27,5 +28,6 @@ def list_inventory(
 def create_inventory(
     payload: InventoryCreate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> InventoryResponse:
     return inventory_service.create_inventory_recommendation(db, payload)

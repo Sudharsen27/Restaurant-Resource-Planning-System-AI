@@ -9,7 +9,8 @@ from app.schemas.recommendation import (
     StaffRecommendationResponse,
 )
 from app.services import recommendation_service
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 from sqlalchemy.orm import Session
 
 router = APIRouter(
@@ -27,6 +28,7 @@ router = APIRouter(
 def staff_recommendation(
     payload: StaffRecommendationRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> StaffRecommendationResponse:
     return recommendation_service.recommend_staff_plan(payload, db=db)
 
@@ -40,6 +42,7 @@ def staff_recommendation(
 def inventory_recommendation(
     payload: InventoryRecommendationRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> InventoryRecommendationResponse:
     return recommendation_service.recommend_inventory_plan(payload, db=db)
 
@@ -56,5 +59,6 @@ def inventory_recommendation(
 def full_plan_recommendation(
     payload: FullPlanRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> FullPlanResponse:
     return recommendation_service.recommend_full_plan(payload, db=db)

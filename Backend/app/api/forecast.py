@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 from app.schemas.forecast import ForecastCreate, ForecastResponse, ForecastUpdate
 from app.services import forecast_service
-from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/forecast", tags=["forecast"])
 
@@ -21,6 +22,7 @@ def list_forecasts(
 def create_forecast(
     payload: ForecastCreate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> ForecastResponse:
     return forecast_service.create_forecast(db, payload)
 
@@ -38,6 +40,7 @@ def update_forecast(
     forecast_id: int,
     payload: ForecastUpdate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> ForecastResponse:
     return forecast_service.update_forecast(db, forecast_id, payload)
 
@@ -46,5 +49,6 @@ def update_forecast(
 def delete_forecast(
     forecast_id: int,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> None:
     forecast_service.delete_forecast(db, forecast_id)

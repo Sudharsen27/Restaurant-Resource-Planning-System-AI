@@ -8,7 +8,8 @@ from app.schemas.ml_forecast import (
     RetrainResponse,
 )
 from app.services import ml_forecast_service
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 
 router = APIRouter(prefix="/forecast", tags=["forecast-ml"])
 
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/forecast", tags=["forecast-ml"])
 def predict_customer_demand(
     payload: MLPredictRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> MLPredictResponse:
     return ml_forecast_service.ml_predict(payload, db=db)
 
@@ -27,5 +29,7 @@ def get_forecast_model_info() -> ModelInfoResponse:
 
 
 @router.post("/retrain", response_model=RetrainResponse, status_code=status.HTTP_201_CREATED)
-def retrain_forecast_model() -> RetrainResponse:
+def retrain_forecast_model(
+    _user: User = Depends(get_current_user),
+) -> RetrainResponse:
     return ml_forecast_service.retrain_model()

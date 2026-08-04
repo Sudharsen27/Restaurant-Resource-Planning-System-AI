@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 from app.services import feedback_service
-from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
@@ -27,5 +28,6 @@ def list_feedback(
 def create_feedback(
     payload: FeedbackCreate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> FeedbackResponse:
     return feedback_service.create_feedback(db, payload)

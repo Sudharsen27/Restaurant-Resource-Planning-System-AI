@@ -8,7 +8,8 @@ from app.schemas.learning_feedback import (
     PredictionHistoryItem,
 )
 from app.services import feedback_service, learning_service
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 
 router = APIRouter(prefix="/feedback", tags=["feedback-learning"])
 
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/feedback", tags=["feedback-learning"])
 def submit_feedback(
     payload: LearningFeedbackRequest,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> LearningFeedbackResponse:
     return learning_service.submit_learning_feedback(db, payload)
 
@@ -66,5 +68,6 @@ def list_legacy_feedback(
 def create_legacy_feedback(
     payload: FeedbackCreate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> FeedbackResponse:
     return feedback_service.create_feedback(db, payload)

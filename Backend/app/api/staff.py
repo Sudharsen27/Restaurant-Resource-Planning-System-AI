@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 from app.schemas.staff import StaffCreate, StaffResponse
 from app.services import staff_service
-from app.api.dependencies import get_db
 
 router = APIRouter(prefix="/staff", tags=["staff"])
 
@@ -27,5 +28,6 @@ def list_staff(
 def create_staff(
     payload: StaffCreate,
     db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ) -> StaffResponse:
     return staff_service.create_staff_recommendation(db, payload)

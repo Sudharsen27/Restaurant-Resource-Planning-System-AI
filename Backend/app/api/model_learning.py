@@ -8,7 +8,8 @@ from app.schemas.learning_feedback import (
     ModelVersionResponse,
 )
 from app.services import learning_service
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
+from app.models import User
 
 router = APIRouter(prefix="/model", tags=["model-learning"])
 
@@ -40,7 +41,10 @@ def current_model(db: Session = Depends(get_db)) -> CurrentModelResponse:
     summary="Manual model retraining",
     description="Retrain the forecast model on the latest dataset and promote a new version.",
 )
-def retrain_model(db: Session = Depends(get_db)) -> ManualRetrainResponse:
+def retrain_model(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> ManualRetrainResponse:
     return learning_service.manual_retrain(db)
 
 
