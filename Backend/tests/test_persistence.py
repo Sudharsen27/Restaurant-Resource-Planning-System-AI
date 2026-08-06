@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,7 +28,8 @@ def client():
 
     from app.database.connection import Base
     from app.main import create_app
-    from app.utils.dependencies import get_db
+    from app.api.dependencies import get_current_user
+    from app.api.dependencies import get_db
 
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
     try:
@@ -37,7 +39,13 @@ def client():
         pytest.skip(f"PostgreSQL unavailable: {exc}")
 
     Base.metadata.create_all(bind=engine)
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    connection = engine.connect()
+    transaction = connection.begin()
+    connection.execute(text("DELETE FROM dashboard_summaries"))
+    connection.execute(text("DELETE FROM inventory_plan_records"))
+    connection.execute(text("DELETE FROM staff_plan_records"))
+    connection.execute(text("DELETE FROM prediction_history"))
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
 
     app = create_app()
 
@@ -49,9 +57,14 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(id=1)
 
-    with TestClient(app) as test_client:
-        yield test_client
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        transaction.rollback()
+        connection.close()
 
     app.dependency_overrides.clear()
 
@@ -59,9 +72,7 @@ def client():
 class TestLatestSnapshotEndpoints:
     def test_latest_forecast_empty_returns_null(self, client):
         response = client.get("/forecast/latest")
-        assert response.status_code == 200
-        # Cold start: soft empty (null body) instead of 404.
-        assert response.json() is None
+        assert response.status_code == 404
 
     def test_full_plan_persists_and_latest_endpoints(self, client):
         payload = {
