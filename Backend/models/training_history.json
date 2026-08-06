@@ -94,5 +94,17 @@
       "r2": 0.99,
       "accuracy": 99.0
     }
+  },
+  {
+    "version_label": "v13",
+    "triggered_by": "feedback",
+    "prediction_id": 78,
+    "created_at": "2026-08-06T17:14:08.113779+05:30",
+    "metrics": {
+      "mae": 0.8,
+      "rmse": 1.1,
+      "r2": 0.99,
+      "accuracy": 99.0
+    }
   }
 ]
