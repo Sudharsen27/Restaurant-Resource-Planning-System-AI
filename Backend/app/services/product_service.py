@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -15,6 +16,9 @@ from app.repositories.restaurant_repository import RestaurantRepository
 from app.schemas.product import ProductCreate, ProductOut, ProductUpdate
 from app.services.audit_service import write_audit
 from app.services.catalog_service import CatalogService
+from app.services.product_cache_service import ProductCacheService, get_product_cache_service
+
+logger = logging.getLogger(__name__)
 
 
 def _to_out(row: Product) -> ProductOut:
@@ -52,14 +56,121 @@ def _to_out(row: Product) -> ProductOut:
 
 
 class ProductService:
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        db: Session,
+        product_cache: ProductCacheService | None = None,
+    ) -> None:
         self.db = db
         self.repo = ProductRepository(db)
         self.restaurants = RestaurantRepository(db)
         self.categories = CategoryRepository(db)
+        self.product_cache = (
+            product_cache if product_cache is not None else get_product_cache_service()
+        )
 
     def list_products(self, **kwargs) -> list[ProductOut]:
-        return [_to_out(r) for r in self.repo.list_filtered(**kwargs)]
+        restaurant_id = kwargs.get("restaurant_id")
+        if restaurant_id is None:
+            logger.info(
+                "CACHE FALLBACK",
+                extra={
+                    "event": "product_cache_bypass",
+                    "reason": "restaurant_scope_missing",
+                },
+            )
+            return [_to_out(row) for row in self.repo.list_filtered(**kwargs)]
+
+        cache_params = {
+            "restaurant_id": restaurant_id,
+            "category_id": kwargs.get("category_id"),
+            "active_only": kwargs.get("active_only", False),
+            "search": kwargs.get("search"),
+            "offset": kwargs.get("skip", 0),
+            "limit": kwargs.get("limit", 100),
+        }
+        try:
+            cached = self.product_cache.get_product_list(**cache_params)
+        except Exception:
+            logger.exception(
+                "CACHE FALLBACK",
+                extra={"event": "product_cache_fallback", "operation": "get"},
+            )
+            cached = None
+
+        if cached is not None:
+            logger.info(
+                "CACHE HIT",
+                extra={
+                    "event": "product_cache_hit",
+                    "restaurant_id": str(restaurant_id),
+                    "item_count": len(cached),
+                },
+            )
+            return cached
+
+        logger.info(
+            "CACHE MISS",
+            extra={"event": "product_cache_miss", "restaurant_id": str(restaurant_id)},
+        )
+        products = [_to_out(row) for row in self.repo.list_filtered(**kwargs)]
+
+        try:
+            stored = self.product_cache.set_product_list(products, **cache_params)
+            if stored:
+                logger.info(
+                    "CACHE STORE",
+                    extra={
+                        "event": "product_cache_store",
+                        "restaurant_id": str(restaurant_id),
+                        "item_count": len(products),
+                    },
+                )
+            else:
+                logger.warning(
+                    "CACHE FALLBACK",
+                    extra={"event": "product_cache_fallback", "operation": "set"},
+                )
+        except Exception:
+            logger.exception(
+                "CACHE FALLBACK",
+                extra={"event": "product_cache_fallback", "operation": "set"},
+            )
+
+        return products
+
+    def _invalidate_product_list_cache(self, *, restaurant_id: UUID) -> None:
+        """Invalidate the restaurant's default product-list cache after a commit."""
+        try:
+            invalidated = self.product_cache.invalidate_product_list(
+                restaurant_id=restaurant_id,
+            )
+        except Exception:
+            logger.exception(
+                "CACHE_INVALIDATION_FAILED",
+                extra={
+                    "event": "product_cache_invalidation_failed",
+                    "restaurant_id": str(restaurant_id),
+                },
+            )
+            return
+
+        if invalidated:
+            logger.info(
+                "CACHE_INVALIDATED",
+                extra={
+                    "event": "product_cache_invalidated",
+                    "restaurant_id": str(restaurant_id),
+                },
+            )
+        else:
+            logger.warning(
+                "CACHE_INVALIDATION_FAILED",
+                extra={
+                    "event": "product_cache_invalidation_failed",
+                    "restaurant_id": str(restaurant_id),
+                },
+            )
 
     def get_product(self, product_id: UUID) -> ProductOut:
         row = self.repo.get_by_id(product_id)
@@ -109,6 +220,7 @@ class ProductService:
             details={"sku": sku, "name": name},
             commit=True,
         )
+        self._invalidate_product_list_cache(restaurant_id=created.restaurant_id)
         return self.get_product(created.id)
 
     def update_product(
@@ -122,7 +234,8 @@ class ProductService:
         if row is None:
             raise NotFoundError("Product", str(product_id))
         data = payload.model_dump(exclude_unset=True)
-        restaurant_id = data.get("restaurant_id", row.restaurant_id)
+        previous_restaurant_id = row.restaurant_id
+        restaurant_id = data.get("restaurant_id", previous_restaurant_id)
         if "restaurant_id" in data and data["restaurant_id"] is not None:
             if self.restaurants.get_by_id(data["restaurant_id"]) is None:
                 raise NotFoundError("Restaurant", str(data["restaurant_id"]))
@@ -153,6 +266,9 @@ class ProductService:
             details={k: (str(v) if not isinstance(v, (str, int, float, bool, type(None))) else v) for k, v in data.items()},
             commit=True,
         )
+        self._invalidate_product_list_cache(restaurant_id=previous_restaurant_id)
+        if restaurant_id != previous_restaurant_id:
+            self._invalidate_product_list_cache(restaurant_id=restaurant_id)
         return self.get_product(product_id)
 
     def delete_product(self, product_id: UUID, *, actor_id: int | None = None) -> None:
@@ -171,6 +287,7 @@ class ProductService:
             details={"sku": row.sku},
             commit=True,
         )
+        self._invalidate_product_list_cache(restaurant_id=row.restaurant_id)
 
     def export_csv(
         self,
@@ -287,4 +404,7 @@ class ProductService:
                 errors.append(f"Row {idx}: {exc}")
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"Row {idx}: {exc}")
+        if created or updated:
+            self.db.commit()
+            self._invalidate_product_list_cache(restaurant_id=restaurant_id)
         return {"created": created, "updated": updated, "errors": errors}

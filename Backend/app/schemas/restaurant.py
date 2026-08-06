@@ -3,10 +3,22 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, EmailStr, Field
+
+
+def _empty_str_to_none(value: Any) -> Any:
+    """Treat blank strings as omitted optional fields (avoids EmailStr 422 on '')."""
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
+OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
 class RestaurantCreate(BaseModel):
@@ -20,7 +32,7 @@ class RestaurantCreate(BaseModel):
     gst_number: str | None = Field(default=None, max_length=32)
     pan_number: str | None = Field(default=None, max_length=16)
     phone: str | None = Field(default=None, max_length=32)
-    email: EmailStr | None = None
+    email: OptionalEmail = None
     website: str | None = Field(default=None, max_length=255)
     logo_url: str | None = Field(default=None, max_length=512)
     address: str | None = None
@@ -41,7 +53,7 @@ class RestaurantUpdate(BaseModel):
     gst_number: str | None = Field(default=None, max_length=32)
     pan_number: str | None = Field(default=None, max_length=16)
     phone: str | None = Field(default=None, max_length=32)
-    email: EmailStr | None = None
+    email: OptionalEmail = None
     website: str | None = Field(default=None, max_length=255)
     logo_url: str | None = Field(default=None, max_length=512)
     address: str | None = None

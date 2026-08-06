@@ -63,6 +63,7 @@ def get_current_model(db: Session) -> CurrentModelResponse:
             rmse=current.rmse,
             r2=current.r2,
             is_production=True,
+            available=True,
         )
 
     manager = ModelManager()
@@ -78,9 +79,11 @@ def get_current_model(db: Session) -> CurrentModelResponse:
             rmse=info.get("metrics", {}).get("rmse"),
             r2=info.get("metrics", {}).get("r2"),
             is_production=True,
+            available=True,
         )
 
-    raise AppException("No production model available", status_code=503)
+    # Soft empty state for cold starts (Render / fresh DB) — avoid 503 console noise.
+    return CurrentModelResponse(available=False)
 
 
 def manual_retrain(db: Session) -> ManualRetrainResponse:

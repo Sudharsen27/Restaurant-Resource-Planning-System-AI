@@ -8,11 +8,24 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db
+from app.core.exceptions import ValidationError
 from app.models import User
 from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate
 from app.services.restaurant_service import RestaurantService
 
 router = APIRouter(prefix="/restaurants", tags=["restaurants"])
+
+
+def _parse_optional_uuid(raw: str | None, *, field: str) -> UUID | None:
+    if raw is None:
+        return None
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        return UUID(value)
+    except ValueError as exc:
+        raise ValidationError(f"Invalid {field}") from exc
 
 
 @router.get("")
@@ -21,19 +34,20 @@ def list_restaurants(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     active_only: bool = Query(default=False),
-    organization_id: UUID | None = Query(default=None),
+    organization_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict:
     from app.services.saas_service import SaaSService
 
+    org_id = _parse_optional_uuid(organization_id, field="organization_id")
     allowed = SaaSService(db).restaurant_ids_for_user(user)
     data = RestaurantService(db).list_restaurants(
         search=search,
         skip=skip,
         limit=limit,
         active_only=active_only,
-        organization_id=organization_id,
+        organization_id=org_id,
         allowed_restaurant_ids=allowed,
     )
     return {

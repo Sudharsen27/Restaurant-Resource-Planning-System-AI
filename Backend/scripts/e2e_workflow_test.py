@@ -51,12 +51,15 @@ def main() -> int:
         dash0 = c.get("/dashboard/latest")
         model0 = c.get("/model/current")
         hist0 = c.get("/feedback/history", params={"limit": 5})
+        model0_body = model0.json() if model0.status_code == 200 else {}
+        if not isinstance(model0_body, dict):
+            model0_body = {}
         step(
             "1. Dashboard load",
             dash0.status_code == 200 and model0.status_code == 200,
             f"dashboard={dash0.status_code}, model={model0.status_code}, history={hist0.status_code}",
         )
-        initial_model_version = model0.json().get("version_label") if model0.status_code == 200 else None
+        initial_model_version = model0_body.get("version_label")
 
         r = c.post("/forecast/predict", json=PREDICT)
         pred = r.json() if r.status_code == 200 else {}
@@ -69,7 +72,8 @@ def main() -> int:
         )
 
         latest_fc = c.get("/forecast/latest")
-        fc_data = latest_fc.json() if latest_fc.status_code == 200 else {}
+        fc_raw = latest_fc.json() if latest_fc.status_code == 200 else {}
+        fc_data = fc_raw if isinstance(fc_raw, dict) else {}
         step(
             "2b. Forecast persisted to DB",
             latest_fc.status_code == 200 and fc_data.get("prediction_id") == prediction_id,

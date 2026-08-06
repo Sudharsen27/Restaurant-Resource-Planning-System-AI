@@ -56,15 +56,16 @@ class ModelVersionResponse(BaseModel):
 
 
 class CurrentModelResponse(BaseModel):
-    version_label: str | None
-    model_name: str
-    training_date: str | None
-    dataset_size: int
-    accuracy: float | None
-    mae: float | None
-    rmse: float | None
-    r2: float | None
-    is_production: bool
+    version_label: str | None = None
+    model_name: str | None = None
+    training_date: str | None = None
+    dataset_size: int = 0
+    accuracy: float | None = None
+    mae: float | None = None
+    rmse: float | None = None
+    r2: float | None = None
+    is_production: bool = False
+    available: bool = True
 
 
 class ManualRetrainResponse(BaseModel):
