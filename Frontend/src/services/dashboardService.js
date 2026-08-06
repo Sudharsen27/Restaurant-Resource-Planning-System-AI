@@ -1,15 +1,26 @@
 import { getModelAccuracy, getCurrentModel } from './modelService'
 import { getLatestDashboard, getLatestForecast } from './persistenceService'
 
+/** Empty-state messages from older backends (pre soft-empty deploy). */
+const EMPTY_STATE_RE =
+  /no (forecast|dashboard|production model|staff|inventory)|not (saved|available|trained) yet/i
+
 function settle(result) {
   if (result.status === 'fulfilled') {
-    return { data: result.value.data, error: null }
+    const payload = result.value?.data ?? null
+    // Treat soft-empty model payload as missing data, not an error.
+    if (payload && payload.available === false) {
+      return { data: null, error: null }
+    }
+    return { data: payload, error: null }
   }
   const err = result.reason
-  return {
-    data: null,
-    error: err instanceof Error ? err.message : String(err),
+  const message = err instanceof Error ? err.message : String(err)
+  // Older production builds returned 404/503 for cold start — not a real failure.
+  if (EMPTY_STATE_RE.test(message)) {
+    return { data: null, error: null }
   }
+  return { data: null, error: message }
 }
 
 /**

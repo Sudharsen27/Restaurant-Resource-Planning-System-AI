@@ -11,15 +11,20 @@ import { ROLE_PATHS } from '../constants/navigation'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getStoredUser())
+  const [user, setUser] = useState(null)
   const [bootstrapping, setBootstrapping] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function bootstrap() {
       const token = getAccessToken()
-      if (!token) {
-        if (!cancelled) setBootstrapping(false)
+      const storedUser = getStoredUser()
+      if (!token || !storedUser) {
+        clearAuthSession()
+        if (!cancelled) {
+          setUser(null)
+          setBootstrapping(false)
+        }
         return
       }
       try {
@@ -48,8 +53,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(async (allSessions = false) => {
-    await authService.logout(allSessions)
-    setUser(null)
+    try {
+      await authService.logout(allSessions)
+    } finally {
+      setUser(null)
+    }
   }, [])
 
   const refreshProfile = useCallback(async () => {
@@ -77,7 +85,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user),
+      isAuthenticated: Boolean(user && getAccessToken()),
       bootstrapping,
       login,
       logout,

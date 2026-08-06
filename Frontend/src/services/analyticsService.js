@@ -21,8 +21,9 @@ export async function fetchAnalyticsData() {
   const unwrap = (result) =>
     result.status === 'fulfilled' ? result.value.data : null
 
+  const currentModel = unwrap(current)
   return {
-    current: unwrap(current),
+    current: currentModel?.available === false ? null : currentModel,
     versions: unwrap(versions) || [],
     accuracy: unwrap(accuracy),
     errors: [current, versions, accuracy]
