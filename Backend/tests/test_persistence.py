@@ -72,7 +72,8 @@ def client():
 class TestLatestSnapshotEndpoints:
     def test_latest_forecast_empty_returns_null(self, client):
         response = client.get("/forecast/latest")
-        assert response.status_code == 404
+        assert response.status_code == 200
+        assert response.json() is None
 
     def test_full_plan_persists_and_latest_endpoints(self, client):
         payload = {
