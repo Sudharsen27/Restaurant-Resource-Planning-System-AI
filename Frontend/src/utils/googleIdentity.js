@@ -1,6 +1,7 @@
 /** Load Google Identity Services and request an ID token via One Tap / button flow. */
 
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
+const GOOGLE_SIGNIN_TIMEOUT_MS = 60_000
 
 let scriptPromise = null
 
@@ -54,9 +55,14 @@ export async function requestGoogleIdToken(clientId) {
     const finish = (error, token) => {
       if (settled) return
       settled = true
+      window.clearTimeout(timeoutId)
       if (error) reject(error)
       else resolve(token)
     }
+
+    const timeoutId = window.setTimeout(() => {
+      finish(new Error('Google sign-in timed out. Please try again.'))
+    }, GOOGLE_SIGNIN_TIMEOUT_MS)
 
     google.accounts.id.initialize({
       client_id: clientId,
@@ -74,8 +80,13 @@ export async function requestGoogleIdToken(clientId) {
 
     google.accounts.id.prompt((notification) => {
       if (settled) return
+
+      if (notification?.isDismissedMoment?.()) {
+        finish(new Error('Google sign-in was cancelled'))
+        return
+      }
+
       if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-        // Fallback: open the official Google button popup via renderButton + click
         const host = document.createElement('div')
         host.style.position = 'fixed'
         host.style.left = '-9999px'
@@ -95,7 +106,11 @@ export async function requestGoogleIdToken(clientId) {
           return
         }
         host.remove()
-        finish(new Error('Google sign-in was blocked by the browser. Allow third-party sign-in and try again.'))
+        finish(
+          new Error(
+            'Google sign-in was blocked by the browser. Allow third-party sign-in and try again.',
+          ),
+        )
       }
     })
   })

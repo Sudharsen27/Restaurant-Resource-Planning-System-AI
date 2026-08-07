@@ -19,9 +19,34 @@ const api = axios.create({
 
 let refreshPromise = null
 
+function toErrorMessage(error) {
+  const data = error.response?.data
+  return (
+    (typeof data?.message === 'string' && data.message) ||
+    (typeof data?.detail === 'string' && data.detail) ||
+    (Array.isArray(data?.detail) ? JSON.stringify(data.detail) : null) ||
+    error.message ||
+    'An unexpected error occurred'
+  )
+}
+
+function isCredentialAuthUrl(url = '') {
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/google') ||
+    url.includes('/auth/providers') ||
+    url.includes('/auth/forgot-password') ||
+    url.includes('/auth/reset-password') ||
+    url.includes('/auth/register')
+  )
+}
+
 async function refreshAccessToken() {
   const refreshToken = getRefreshToken()
-  if (!refreshToken) throw new Error('No refresh token')
+  if (!refreshToken) {
+    throw new Error('Session expired. Please sign in again.')
+  }
   const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
     refresh_token: refreshToken,
   })
@@ -46,9 +71,16 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config
     const status = error.response?.status
-    const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/refresh')
+    const url = `${original?.baseURL || ''}${original?.url || ''}`
 
-    if (status === 401 && original && !original._retry && !isAuthRoute) {
+    // Never refresh credential/auth bootstrap calls, and never refresh without a token.
+    if (
+      status === 401 &&
+      original &&
+      !original._retry &&
+      !isCredentialAuthUrl(url) &&
+      getRefreshToken()
+    ) {
       original._retry = true
       try {
         refreshPromise = refreshPromise || refreshAccessToken()
@@ -62,19 +94,13 @@ api.interceptors.response.use(
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           window.location.assign('/login')
         }
-        return Promise.reject(refreshError)
+        return Promise.reject(
+          new Error(toErrorMessage(refreshError) || 'Session expired. Please sign in again.'),
+        )
       }
     }
 
-    const data = error.response?.data
-    const message =
-      (typeof data?.message === 'string' && data.message) ||
-      (typeof data?.detail === 'string' && data.detail) ||
-      (Array.isArray(data?.detail) ? JSON.stringify(data.detail) : null) ||
-      error.message ||
-      'An unexpected error occurred'
-
-    return Promise.reject(new Error(message))
+    return Promise.reject(new Error(toErrorMessage(error)))
   },
 )
 
