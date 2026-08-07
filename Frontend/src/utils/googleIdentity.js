@@ -1,7 +1,7 @@
-/** Load Google Identity Services and request an ID token via One Tap / button flow. */
+/** Google Identity Services — reliable Continue-with-Google via official button. */
 
 const GIS_SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
-const GOOGLE_SIGNIN_TIMEOUT_MS = 60_000
+const GOOGLE_SIGNIN_TIMEOUT_MS = 90_000
 
 let scriptPromise = null
 
@@ -37,8 +37,69 @@ function loadGoogleScript() {
   return scriptPromise
 }
 
+function createGoogleChooserOverlay() {
+  const overlay = document.createElement('div')
+  overlay.setAttribute('role', 'dialog')
+  overlay.setAttribute('aria-modal', 'true')
+  overlay.setAttribute('aria-label', 'Continue with Google')
+  overlay.style.cssText = [
+    'position:fixed',
+    'inset:0',
+    'z-index:99999',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'background:rgba(15,23,42,0.55)',
+    'padding:16px',
+  ].join(';')
+
+  const panel = document.createElement('div')
+  panel.style.cssText = [
+    'width:min(100%,360px)',
+    'border-radius:16px',
+    'background:#fff',
+    'padding:24px',
+    'box-shadow:0 20px 45px rgba(0,0,0,0.25)',
+    'font-family:system-ui,sans-serif',
+  ].join(';')
+
+  const title = document.createElement('h2')
+  title.textContent = 'Continue with Google'
+  title.style.cssText = 'margin:0 0 8px;font-size:18px;font-weight:700;color:#0f172a;'
+
+  const help = document.createElement('p')
+  help.textContent = 'Choose your Google account to sign in securely.'
+  help.style.cssText = 'margin:0 0 20px;font-size:14px;line-height:1.45;color:#64748b;'
+
+  const buttonHost = document.createElement('div')
+  buttonHost.style.cssText = 'display:flex;justify-content:center;min-height:44px;'
+
+  const cancel = document.createElement('button')
+  cancel.type = 'button'
+  cancel.textContent = 'Cancel'
+  cancel.style.cssText = [
+    'margin-top:16px',
+    'width:100%',
+    'height:40px',
+    'border-radius:10px',
+    'border:1px solid #cbd5e1',
+    'background:#fff',
+    'color:#334155',
+    'font-size:14px',
+    'font-weight:600',
+    'cursor:pointer',
+  ].join(';')
+
+  panel.append(title, help, buttonHost, cancel)
+  overlay.appendChild(panel)
+  document.body.appendChild(overlay)
+
+  return { overlay, buttonHost, cancel }
+}
+
 /**
- * Opens Google's account chooser and resolves with a verified ID token string.
+ * Shows Google's official sign-in button and resolves with an ID token.
+ * Avoids FedCM One Tap skipped_moment hangs from programmatic prompt().
  */
 export async function requestGoogleIdToken(clientId) {
   if (!clientId) {
@@ -52,17 +113,36 @@ export async function requestGoogleIdToken(clientId) {
 
   return new Promise((resolve, reject) => {
     let settled = false
+    const { overlay, buttonHost, cancel } = createGoogleChooserOverlay()
+
+    const cleanup = () => {
+      overlay.remove()
+      window.clearTimeout(timeoutId)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+
     const finish = (error, token) => {
       if (settled) return
       settled = true
-      window.clearTimeout(timeoutId)
+      cleanup()
       if (error) reject(error)
       else resolve(token)
+    }
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        finish(new Error('Google sign-in was cancelled'))
+      }
     }
 
     const timeoutId = window.setTimeout(() => {
       finish(new Error('Google sign-in timed out. Please try again.'))
     }, GOOGLE_SIGNIN_TIMEOUT_MS)
+
+    cancel.addEventListener('click', () => {
+      finish(new Error('Google sign-in was cancelled'))
+    })
+    document.addEventListener('keydown', onKeyDown)
 
     google.accounts.id.initialize({
       client_id: clientId,
@@ -73,45 +153,20 @@ export async function requestGoogleIdToken(clientId) {
         }
         finish(null, response.credential)
       },
-      cancel_on_tap_outside: true,
+      // One Tap/FedCM prompt is unreliable for custom buttons; use the official button instead.
       auto_select: false,
-      use_fedcm_for_prompt: true,
+      cancel_on_tap_outside: true,
+      use_fedcm_for_prompt: false,
     })
 
-    google.accounts.id.prompt((notification) => {
-      if (settled) return
-
-      if (notification?.isDismissedMoment?.()) {
-        finish(new Error('Google sign-in was cancelled'))
-        return
-      }
-
-      if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-        const host = document.createElement('div')
-        host.style.position = 'fixed'
-        host.style.left = '-9999px'
-        document.body.appendChild(host)
-        google.accounts.id.renderButton(host, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'rectangular',
-          width: 320,
-        })
-        const button = host.querySelector('div[role="button"]')
-        if (button) {
-          button.click()
-          window.setTimeout(() => host.remove(), 2000)
-          return
-        }
-        host.remove()
-        finish(
-          new Error(
-            'Google sign-in was blocked by the browser. Allow third-party sign-in and try again.',
-          ),
-        )
-      }
+    google.accounts.id.renderButton(buttonHost, {
+      type: 'standard',
+      theme: 'outline',
+      size: 'large',
+      text: 'continue_with',
+      shape: 'rectangular',
+      logo_alignment: 'left',
+      width: 320,
     })
   })
 }
