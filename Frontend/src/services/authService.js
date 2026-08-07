@@ -12,6 +12,22 @@ export async function login(email, password) {
   return payload
 }
 
+export async function loginWithGoogle(idToken) {
+  const { data } = await api.post('/auth/google', { id_token: idToken })
+  const payload = data.data
+  setAuthSession({
+    accessToken: payload.tokens.access_token,
+    refreshToken: payload.tokens.refresh_token,
+    user: payload.user,
+  })
+  return payload
+}
+
+export async function getAuthProviders() {
+  const { data } = await api.get('/auth/providers')
+  return data.data
+}
+
 export async function refreshTokens() {
   const refreshToken = getRefreshToken()
   if (!refreshToken) throw new Error('No refresh token')

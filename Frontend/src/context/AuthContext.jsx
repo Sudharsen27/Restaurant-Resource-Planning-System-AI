@@ -52,6 +52,12 @@ export function AuthProvider({ children }) {
     return payload
   }, [])
 
+  const loginWithGoogle = useCallback(async (idToken) => {
+    const payload = await authService.loginWithGoogle(idToken)
+    setUser(payload.user)
+    return payload
+  }, [])
+
   const logout = useCallback(async (allSessions = false) => {
     try {
       await authService.logout(allSessions)
@@ -88,12 +94,13 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(user && getAccessToken()),
       bootstrapping,
       login,
+      loginWithGoogle,
       logout,
       refreshProfile,
       hasRole,
       canAccessPath,
     }),
-    [user, bootstrapping, login, logout, refreshProfile, hasRole, canAccessPath],
+    [user, bootstrapping, login, loginWithGoogle, logout, refreshProfile, hasRole, canAccessPath],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

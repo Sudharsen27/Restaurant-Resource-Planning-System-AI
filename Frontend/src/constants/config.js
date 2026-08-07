@@ -9,5 +9,8 @@ export const API_BASE_URL =
 
 export const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS || 120000)
 
+/** Public Google OAuth client ID (optional). Empty hides Google sign-in. */
+export const GOOGLE_CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+
 export const QUERY_STALE_TIME_MS = 30_000
 export const THEME_STORAGE_KEY = 'rrps-theme'

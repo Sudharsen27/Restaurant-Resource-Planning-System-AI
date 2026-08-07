@@ -35,32 +35,36 @@ export function AuthSecondaryButton({ children, className = '', ...props }) {
   )
 }
 
-export function SocialLoginButton({ provider = 'Google', onClick, disabled }) {
+export function SocialLoginButton({ provider = 'Google', onClick, disabled, loading }) {
   return (
     <AuthSecondaryButton
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
       aria-label={`Continue with ${provider}`}
+      aria-busy={loading || undefined}
     >
-      <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden>
-        <path
-          fill="#EA4335"
-          d="M12 10.2v3.6h5.1c-.2 1.2-.9 2.3-1.9 3l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.3-.2-1.9H12z"
-        />
-        <path
-          fill="#34A853"
-          d="M6.6 14.3l-.8.6-2.7 2.1C4.7 20 8.1 22 12 22c2.4 0 4.5-.8 6-2.2l-3.1-2.4c-.8.6-1.9.9-2.9.9-2.3 0-4.2-1.5-4.9-3.6z"
-        />
-        <path
-          fill="#4A90E2"
-          d="M3.1 7.1C2.4 8.5 2 10.2 2 12s.4 3.5 1.1 4.9l3.5-2.7C6.2 13.4 6 12.7 6 12s.2-1.4.5-2.1L3.1 7.1z"
-        />
-        <path
-          fill="#FBBC05"
-          d="M12 6c1.3 0 2.5.5 3.4 1.3l2.6-2.6C16.5 3.4 14.4 2.5 12 2.5 8.1 2.5 4.7 4.5 3.1 7.1l3.4 2.7C7.3 7.7 9.3 6 12 6z"
-        />
-      </svg>
-      Continue with {provider}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+      {!loading ? (
+        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden>
+          <path
+            fill="#EA4335"
+            d="M12 10.2v3.6h5.1c-.2 1.2-.9 2.3-1.9 3l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.3-.2-1.9H12z"
+          />
+          <path
+            fill="#34A853"
+            d="M6.6 14.3l-.8.6-2.7 2.1C4.7 20 8.1 22 12 22c2.4 0 4.5-.8 6-2.2l-3.1-2.4c-.8.6-1.9.9-2.9.9-2.3 0-4.2-1.5-4.9-3.6z"
+          />
+          <path
+            fill="#4A90E2"
+            d="M3.1 7.1C2.4 8.5 2 10.2 2 12s.4 3.5 1.1 4.9l3.5-2.7C6.2 13.4 6 12.7 6 12s.2-1.4.5-2.1L3.1 7.1z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M12 6c1.3 0 2.5.5 3.4 1.3l2.6-2.6C16.5 3.4 14.4 2.5 12 2.5 8.1 2.5 4.7 4.5 3.1 7.1l3.4 2.7C7.3 7.7 9.3 6 12 6z"
+          />
+        </svg>
+      ) : null}
+      {loading ? `Connecting with ${provider}…` : `Continue with ${provider}`}
     </AuthSecondaryButton>
   )
 }

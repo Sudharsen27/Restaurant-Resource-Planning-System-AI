@@ -10,11 +10,13 @@ import {
   FormFooter,
   AuthLink,
 } from '../components/auth/AuthActions'
+import { GOOGLE_CLIENT_ID } from '../constants/config'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { requestGoogleIdToken } from '../utils/googleIdentity'
 
 export default function Login() {
-  const { login, isAuthenticated, bootstrapping } = useAuth()
+  const { login, loginWithGoogle, isAuthenticated, bootstrapping } = useAuth()
   const { success, error: toastError } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
@@ -35,7 +37,11 @@ export default function Login() {
     }
   })
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  // Enterprise rule: never show Google SSO without a build-time VITE client ID.
+  const googleClientId = GOOGLE_CLIENT_ID
+  const googleSignInEnabled = Boolean(googleClientId)
 
   useEffect(() => {
     emailRef.current?.focus()
@@ -77,6 +83,27 @@ export default function Login() {
       setErrors({ form: err.message || 'Invalid email or password' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function onGoogleSignIn() {
+    if (!googleClientId) {
+      toastError('Google sign-in is not configured for this environment')
+      return
+    }
+    setGoogleLoading(true)
+    setErrors({})
+    try {
+      const idToken = await requestGoogleIdToken(googleClientId)
+      await loginWithGoogle(idToken)
+      success('Welcome back')
+      navigate(location.state?.from || '/', { replace: true })
+    } catch (err) {
+      const message = err.message || 'Google sign-in failed'
+      setErrors({ form: message })
+      toastError(message)
+    } finally {
+      setGoogleLoading(false)
     }
   }
 
@@ -137,11 +164,19 @@ export default function Login() {
           {errors.form && <AuthAlert>{errors.form}</AuthAlert>}
 
           <div className="space-y-3 pt-1">
-            <AuthPrimaryButton loading={loading}>
+            <AuthPrimaryButton loading={loading} disabled={googleLoading}>
               {loading ? 'Signing in…' : 'Sign in'}
             </AuthPrimaryButton>
-            <AuthDivider />
-            <SocialLoginButton onClick={() => toastError('Google sign-in will be available soon')} />
+            {googleSignInEnabled ? (
+              <>
+                <AuthDivider />
+                <SocialLoginButton
+                  onClick={() => void onGoogleSignIn()}
+                  disabled={loading || googleLoading}
+                  loading={googleLoading}
+                />
+              </>
+            ) : null}
           </div>
         </form>
       </AuthCard>
