@@ -37,7 +37,7 @@ export async function login(email, password) {
     const { data } = await authApi.post('/auth/login', { email, password })
     return storeLoginPayload(data.data)
   } catch (error) {
-    throw new Error(authErrorMessage(error))
+    throw new Error(authErrorMessage(error), { cause: error })
   }
 }
 
@@ -46,7 +46,7 @@ export async function loginWithGoogle(idToken) {
     const { data } = await authApi.post('/auth/google', { id_token: idToken })
     return storeLoginPayload(data.data)
   } catch (error) {
-    throw new Error(authErrorMessage(error))
+    throw new Error(authErrorMessage(error), { cause: error })
   }
 }
 
