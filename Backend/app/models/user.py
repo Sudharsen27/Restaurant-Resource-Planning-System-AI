@@ -15,6 +15,8 @@ class User(BaseModel):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth_provider: Mapped[str] = mapped_column(String(32), nullable=False, server_default="local")
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="userrole"), nullable=False)
     email_verified: Mapped[bool] = mapped_column(
         Boolean,

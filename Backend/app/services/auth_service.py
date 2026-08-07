@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.exceptions import ForbiddenError, UnauthorizedError, ValidationError
 from app.models import AuditLog, Permission, Role, User
 from app.models.auth import EmailVerificationToken, PasswordHistory, PasswordResetToken, UserSession
-from app.models.enums import AuditAction
+from app.models.enums import AuditAction, UserRole
 
 
 def _now() -> datetime:
@@ -136,40 +136,15 @@ def _parse_user_agent(user_agent: str | None) -> tuple[str | None, str | None, s
     return device, os_name, browser
 
 
-def authenticate_user(
+def _issue_session_tokens(
     db: Session,
     *,
-    email: str,
-    password: str,
+    user: User,
     ip_address: str | None,
     user_agent: str | None,
+    audit_details: dict | None = None,
 ) -> tuple[User, str, str, int]:
-    user = db.scalar(select(User).where(and_(User.email == email, User.is_deleted.is_(False))))
-    if user is None:
-        raise UnauthorizedError("Invalid email or password")
-
     now = _now()
-    if user.locked_until and user.locked_until > now:
-        raise ForbiddenError("Account is temporarily locked. Try again later.")
-    if not user.is_active:
-        raise ForbiddenError("Account is inactive")
-
-    if not verify_password(password, user.password_hash):
-        user.failed_login_attempts += 1
-        if user.failed_login_attempts >= settings.max_failed_login_attempts:
-            user.locked_until = now + timedelta(minutes=settings.account_lock_minutes)
-        _audit(
-            db,
-            action=AuditAction.LOGIN,
-            actor_user_id=user.id,
-            entity_type="auth",
-            entity_id=str(user.id),
-            details={"success": False, "reason": "invalid_password"},
-            ip_address=ip_address,
-        )
-        db.commit()
-        raise UnauthorizedError("Invalid email or password")
-
     user.failed_login_attempts = 0
     user.locked_until = None
     user.last_login_at = now
@@ -204,20 +179,156 @@ def authenticate_user(
         permissions=permissions,
         session_id=session.id,
     )
-    # Store hash of the JWT refresh token (must match rotate_refresh_token)
     session.refresh_token_hash = _hash_token(refresh_token)
 
+    details = {"success": True, "session_id": session.id}
+    if audit_details:
+        details.update(audit_details)
     _audit(
         db,
         action=AuditAction.LOGIN,
         actor_user_id=user.id,
         entity_type="auth",
         entity_id=str(user.id),
-        details={"success": True, "session_id": session.id},
+        details=details,
         ip_address=ip_address,
     )
     db.commit()
     return user, access_token, refresh_token, session.id
+
+
+def authenticate_user(
+    db: Session,
+    *,
+    email: str,
+    password: str,
+    ip_address: str | None,
+    user_agent: str | None,
+) -> tuple[User, str, str, int]:
+    user = db.scalar(select(User).where(and_(User.email == email, User.is_deleted.is_(False))))
+    if user is None:
+        raise UnauthorizedError("Invalid email or password")
+
+    now = _now()
+    if user.locked_until and user.locked_until > now:
+        raise ForbiddenError("Account is temporarily locked. Try again later.")
+    if not user.is_active:
+        raise ForbiddenError("Account is inactive")
+
+    if not verify_password(password, user.password_hash):
+        user.failed_login_attempts += 1
+        if user.failed_login_attempts >= settings.max_failed_login_attempts:
+            user.locked_until = now + timedelta(minutes=settings.account_lock_minutes)
+        _audit(
+            db,
+            action=AuditAction.LOGIN,
+            actor_user_id=user.id,
+            entity_type="auth",
+            entity_id=str(user.id),
+            details={"success": False, "reason": "invalid_password"},
+            ip_address=ip_address,
+        )
+        db.commit()
+        raise UnauthorizedError("Invalid email or password")
+
+    return _issue_session_tokens(
+        db,
+        user=user,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        audit_details={"method": "password"},
+    )
+
+
+def _verify_google_id_token(id_token: str) -> dict:
+    if not settings.google_oauth_enabled:
+        raise ForbiddenError("Google sign-in is not configured")
+
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token as google_id_token
+    except ImportError as exc:
+        raise ForbiddenError("Google sign-in dependency is not installed") from exc
+
+    try:
+        claims = google_id_token.verify_oauth2_token(
+            id_token,
+            google_requests.Request(),
+            settings.google_oauth_client_id.strip(),
+        )
+    except Exception as exc:
+        raise UnauthorizedError("Invalid Google identity token") from exc
+
+    if claims.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}:
+        raise UnauthorizedError("Invalid Google identity token issuer")
+    if not claims.get("email"):
+        raise UnauthorizedError("Google account email is required")
+    if claims.get("email_verified") is not True:
+        raise UnauthorizedError("Google account email is not verified")
+    if not claims.get("sub"):
+        raise UnauthorizedError("Invalid Google identity subject")
+    return claims
+
+
+def authenticate_google_user(
+    db: Session,
+    *,
+    id_token: str,
+    ip_address: str | None,
+    user_agent: str | None,
+) -> tuple[User, str, str, int]:
+    claims = _verify_google_id_token(id_token)
+    google_sub = str(claims["sub"])
+    email = str(claims["email"]).strip().lower()
+    full_name = (claims.get("name") or email.split("@")[0]).strip() or "Google User"
+
+    user = db.scalar(
+        select(User).where(and_(User.google_sub == google_sub, User.is_deleted.is_(False)))
+    )
+    if user is None:
+        user = db.scalar(
+            select(User).where(and_(func.lower(User.email) == email, User.is_deleted.is_(False)))
+        )
+        if user is not None:
+            user.google_sub = google_sub
+            if user.auth_provider == "local":
+                user.auth_provider = "google"
+            user.email_verified = True
+        elif settings.google_oauth_allow_signup:
+            try:
+                role = UserRole(settings.google_oauth_default_role.upper())
+            except ValueError:
+                role = UserRole.EMPLOYEE
+            user = User(
+                full_name=full_name[:255],
+                email=email,
+                password_hash=hash_password(secrets.token_urlsafe(48)),
+                auth_provider="google",
+                google_sub=google_sub,
+                role=role,
+                email_verified=True,
+                is_active=True,
+            )
+            db.add(user)
+            db.flush()
+        else:
+            raise UnauthorizedError(
+                "No account exists for this Google email. Contact your administrator."
+            )
+
+    now = _now()
+    if user.locked_until and user.locked_until > now:
+        raise ForbiddenError("Account is temporarily locked. Try again later.")
+    if not user.is_active:
+        raise ForbiddenError("Account is inactive")
+
+    return _issue_session_tokens(
+        db,
+        user=user,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        audit_details={"method": "google", "google_sub": google_sub},
+    )
 
 
 def rotate_refresh_token(

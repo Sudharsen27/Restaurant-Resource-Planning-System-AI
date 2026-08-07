@@ -56,6 +56,10 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str = Field(min_length=20, max_length=8192)
+
+
 class SessionInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

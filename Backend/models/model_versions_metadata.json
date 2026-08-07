@@ -1,14 +1,36 @@
 [
   {
-    "version_label": "v15",
+    "version_label": "v17",
     "model_name": "GradientBoostingRegressor",
-    "training_date": "2026-08-06T12:06:10.808018+00:00",
+    "training_date": "2026-08-07T09:19:59.948202+00:00",
     "dataset_size": 10010,
     "accuracy": 99.0,
     "mae": 0.8,
     "rmse": 1.1,
     "r2": 0.99,
     "is_production": true
+  },
+  {
+    "version_label": "v16",
+    "model_name": "Test",
+    "training_date": "2026-08-07T14:49:59.215547+05:30",
+    "dataset_size": 100,
+    "accuracy": 99.0,
+    "mae": 1.0,
+    "rmse": 1.2,
+    "r2": 0.99,
+    "is_production": false
+  },
+  {
+    "version_label": "v15",
+    "model_name": "GradientBoostingRegressor",
+    "training_date": "2026-08-06T17:36:10.808018+05:30",
+    "dataset_size": 10010,
+    "accuracy": 99.0,
+    "mae": 0.8,
+    "rmse": 1.1,
+    "r2": 0.99,
+    "is_production": false
   },
   {
     "version_label": "v14",

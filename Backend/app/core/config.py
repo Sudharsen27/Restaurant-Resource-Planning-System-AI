@@ -77,13 +77,22 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 100
     rate_limit_window_seconds: int = 60
 
+    # Google OAuth / SSO (optional — leave blank to hide Google sign-in)
+    google_oauth_client_id: str = ""
+    google_oauth_allow_signup: bool = False
+    google_oauth_default_role: str = "EMPLOYEE"
+
     # Security headers / CSRF / HTTPS
     security_headers_enabled: bool = True
     csp_enabled: bool = True
     csp_policy: str = (
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "default-src 'self'; "
+        "script-src 'self' https://accounts.google.com https://apis.google.com; "
+        "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https:; font-src 'self' data:; "
-        "connect-src 'self' http: https: ws: wss:; frame-ancestors 'none'; "
+        "connect-src 'self' http: https: ws: wss:; "
+        "frame-src https://accounts.google.com; "
+        "frame-ancestors 'none'; "
         "base-uri 'self'; form-action 'self'"
     )
     hsts_enabled: bool = False
@@ -220,6 +229,10 @@ class Settings(BaseSettings):
     @property
     def is_testing(self) -> bool:
         return self.app_env in {"test", "testing"}
+
+    @property
+    def google_oauth_enabled(self) -> bool:
+        return bool(self.google_oauth_client_id.strip())
 
     @property
     def effective_csp(self) -> str | None:

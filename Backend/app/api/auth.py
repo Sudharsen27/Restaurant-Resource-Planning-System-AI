@@ -12,6 +12,7 @@ from app.models.auth import UserSession
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LoginRequest,
     LogoutRequest,
     RefreshRequest,
@@ -19,6 +20,7 @@ from app.schemas.auth import (
     SessionInfo,
 )
 from app.services.auth_service import (
+    authenticate_google_user,
     authenticate_user,
     change_password,
     create_password_reset_token,
@@ -63,6 +65,60 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         ip_address=_client_ip(request),
         user_agent=request.headers.get("user-agent"),
         message="User login successful",
+    )
+    return {
+        "success": True,
+        "message": "Login successful",
+        "data": {
+            "user": {
+                "id": user.id,
+                "full_name": user.full_name,
+                "email": user.email,
+                "role": user.role.value,
+                "email_verified": user.email_verified,
+            },
+            "tokens": {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                **_token_meta(),
+            },
+        },
+    }
+
+
+@router.get("/providers")
+def auth_providers() -> dict:
+    """Public discovery for optional enterprise identity providers."""
+    google_enabled = settings.google_oauth_enabled
+    return {
+        "success": True,
+        "message": "Auth providers",
+        "data": {
+            "password": True,
+            "google": {
+                "enabled": google_enabled,
+                "client_id": settings.google_oauth_client_id.strip() if google_enabled else None,
+                "allow_signup": bool(settings.google_oauth_allow_signup) if google_enabled else False,
+            },
+        },
+    }
+
+
+@router.post("/google")
+def google_login(payload: GoogleLoginRequest, request: Request, db: Session = Depends(get_db)) -> dict:
+    user, access_token, refresh_token, _session_id = authenticate_google_user(
+        db,
+        id_token=payload.id_token,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    AutomationService(db).record_login_event(
+        user_id=user.id,
+        event_type="LOGIN",
+        success=True,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+        message="Google login successful",
     )
     return {
         "success": True,
